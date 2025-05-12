@@ -31,7 +31,7 @@ export function WaitlistForm() {
 
       setSubmitStatus('success')
       reset()
-    } catch (error) {
+    } catch {
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)

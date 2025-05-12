@@ -15,8 +15,8 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json(waitlist)
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return new NextResponse('该邮箱已经注册', { status: 400 })
     }
     return new NextResponse('服务器错误', { status: 500 })
