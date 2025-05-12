@@ -1,4 +1,4 @@
-import { Company } from '@prisma/client'
+import type { Company } from '@prisma/client'
 import { useState } from 'react'
 import { EditCompanyDialog } from './EditCompanyDialog'
 import { TrashIcon } from '@heroicons/react/24/outline'
@@ -67,7 +67,7 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
           <div>
             <span className="text-sm font-medium text-gray-500">产品列表：</span>
             <div className="mt-1 flex flex-wrap gap-2">
-              {company.products.map((product, index) => (
+              {company.products.map((product: string, index: number) => (
                 <span
                   key={index}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -84,7 +84,7 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         company={company}
-        onSuccess={onUpdate}
+        onUpdate={onUpdate}
       />
 
       {/* 删除确认对话框 */}

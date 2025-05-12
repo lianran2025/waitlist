@@ -1,4 +1,4 @@
-import { Company } from '@prisma/client'
+import type { Company } from '@prisma/client'
 import { useState } from 'react'
 import { Dialog } from '@headlessui/react'
 
