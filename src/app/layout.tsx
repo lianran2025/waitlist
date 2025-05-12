@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  fallback: ["system-ui", "arial"]
+});
 
 export const metadata: Metadata = {
-  title: "三毛Prime会员预售",
-  description: "加入我们的等待名单，成为首批三毛Prime会员，享受专属特权！",
+  title: "越鑫检测报告公司信息",
+  description: "公司信息管理系统",
 };
 
 export default function RootLayout({

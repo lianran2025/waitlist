@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,20 +11,19 @@ datasource db {
 }
 
 model Waitlist {
-  id        String   @id
+  id        String   @id @default(cuid())
   email     String   @unique
   name      String?
   createdAt DateTime @default(now())
-  status    String   @default("pending")
-  metadata  Json?
+  updatedAt DateTime @updatedAt
 }
 
 model Company {
   id        String   @id @default(cuid())
-  shortName String   // 公司简称
-  fullName  String   // 公司全称
-  products  String[] // 产品列表
-  alarm     Int      // 报警阈值
+  shortName String   @unique
+  fullName  String
+  products  String[]
+  alarm     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
