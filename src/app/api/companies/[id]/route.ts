@@ -9,8 +9,10 @@ export async function PUT(
     const body = await request.json()
     const { shortName, fullName, products, alarm } = body
 
-    const updatedCompany = await prisma.company.update({
-      where: { id: params.id },
+    const company = await prisma.company.update({
+      where: {
+        id: params.id
+      },
       data: {
         shortName,
         fullName,
@@ -19,7 +21,7 @@ export async function PUT(
       }
     })
 
-    return NextResponse.json(updatedCompany)
+    return NextResponse.json(company)
   } catch (error) {
     console.error('Error updating company:', error)
     return NextResponse.json(
