@@ -13,7 +13,7 @@ export async function GET() {
     })
 
     // 将数据转换为与示例代码相同的格式
-    const formattedCompanies = companies.map(company => ({
+    const formattedCompanies = companies.map((company: any) => ({
       name: company.shortName,
       fullname: company.fullName,
       list: company.products,
@@ -31,9 +31,7 @@ export async function GET() {
     return response
   } catch (error) {
     console.error('Error fetching companies:', error)
-    return NextResponse.json(
-      { error: '获取公司列表失败' },
-      { status: 500 }
-    )
+    // 返回空数组，保证前端安全
+    return NextResponse.json([])
   }
 } 
