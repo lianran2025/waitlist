@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Select from 'react-select'
 
 export default function NewProjectPage() {
   const [loading, setLoading] = useState(false)
@@ -8,6 +9,8 @@ export default function NewProjectPage() {
   const [downloadUrl, setDownloadUrl] = useState("")
   const [companies, setCompanies] = useState<any[]>([])
   const [selectedCompany, setSelectedCompany] = useState("")
+  const [selectedCompanyOption, setSelectedCompanyOption] = useState<any>(null)
+  const [companyError, setCompanyError] = useState("")
   const [models, setModels] = useState<string[]>([])
   const [selectedModel, setSelectedModel] = useState("")
 
@@ -16,17 +19,28 @@ export default function NewProjectPage() {
       .then(res => res.json())
       .then(data => {
         setCompanies(data)
-        if (data.length > 0) {
-          setSelectedCompany(data[0].fullname)
-          setModels(data[0].list)
-          setSelectedModel(data[0].list[0] || "")
-        }
+        // 初始不选中公司，鼓励用户输入搜索
+        // if (data.length > 0) {
+        //   setSelectedCompany(data[0].fullname)
+        //   setSelectedCompanyOption({ label: data[0].fullname, value: data[0].fullname })
+        //   setModels(data[0].list)
+        //   setSelectedModel(data[0].list[0] || "")
+        // }
       })
   }, [])
 
-  const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const company = companies.find(c => c.fullname === e.target.value)
+  const handleCompanyChange = (option: any) => {
+    setCompanyError("")
+    if (!option) {
+      setSelectedCompany("")
+      setSelectedCompanyOption(null)
+      setModels([])
+      setSelectedModel("")
+      return
+    }
+    const company = companies.find(c => c.fullname === option.value)
     setSelectedCompany(company.fullname)
+    setSelectedCompanyOption(option)
     setModels(company.list)
     setSelectedModel(company.list[0] || "")
   }
@@ -40,8 +54,15 @@ export default function NewProjectPage() {
     setLoading(true)
     setMessage("")
     setDownloadUrl("")
+    setCompanyError("")
     const form = e.currentTarget
     const formData = new FormData(form)
+    // 校验公司是否已选择
+    if (!selectedCompanyOption) {
+      setCompanyError("请选择公司名称")
+      setLoading(false)
+      return
+    }
 
     // 日期格式化处理
     const rawDate = formData.get("date") as string
@@ -97,79 +118,185 @@ export default function NewProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-xl">
-        <h2 className="text-2xl font-bold mb-6">证书生成工具</h2>
-        <form id="generateForm" className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="company_name" className="block font-medium mb-1">委托单位名称</label>
-            <input type="text" id="company_name" name="company_name" required className="w-full border rounded px-3 py-2" placeholder="请输入委托单位名称" />
-          </div>
-          <div>
-            <label htmlFor="alert_factory" className="block font-medium mb-1">公司名称</label>
-            <select id="alert_factory" name="alert_factory" value={selectedCompany} onChange={handleCompanyChange} required className="w-full border rounded px-3 py-2">
-              {companies.map(c => (
-                <option key={c.fullname} value={c.fullname}>{c.fullname}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="alert_type" className="block font-medium mb-1">品牌型号</label>
-            <select id="alert_type" name="alert_type" value={selectedModel} onChange={handleModelChange} required className="w-full border rounded px-3 py-2">
-              {models.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="all_nums" className="block font-medium mb-1">探头总数量</label>
-            <input type="number" id="all_nums" name="all_nums" required min={1} className="w-full border rounded px-3 py-2" placeholder="请输入探头总数" />
-          </div>
-          <div>
-            <label htmlFor="date" className="block font-medium mb-1">检测日期</label>
-            <input type="date" id="date" name="date" required className="w-full border rounded px-3 py-2" defaultValue={new Date().toISOString().split('T')[0]} />
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label htmlFor="temperature" className="block font-medium mb-1">温度（°C）</label>
-              <input type="number" id="temperature" name="temperature" step="0.1" required className="w-full border rounded px-3 py-2" placeholder="如: 20.0" defaultValue="20.0" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center p-6">
+      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl">
+        <h2 className="text-3xl font-bold mb-8 text-gray-800">证书生成工具</h2>
+        <form id="generateForm" className="space-y-8" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-2">委托单位名称</label>
+              <input 
+                type="text" 
+                id="company_name" 
+                name="company_name" 
+                required 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="请输入委托单位名称" 
+              />
             </div>
-            <div className="flex-1">
-              <label htmlFor="humidity" className="block font-medium mb-1">湿度（%）</label>
-              <input type="number" id="humidity" name="humidity" required min={0} max={100} className="w-full border rounded px-3 py-2" placeholder="如: 50" defaultValue="50" />
+            <div>
+              <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">公司名称</label>
+              <Select
+                inputId="alert_factory"
+                name="alert_factory"
+                value={selectedCompanyOption}
+                onChange={handleCompanyChange}
+                options={companies.map(c => ({ label: c.fullname, value: c.fullname }))}
+                classNamePrefix="react-select"
+                placeholder="请输入或搜索公司名称..."
+                isSearchable
+                isClearable
+                styles={{
+                  control: (base, state) => ({ ...base, minHeight: '48px', borderRadius: '0.5rem', borderColor: companyError ? '#ef4444' : '#d1d5db', boxShadow: 'none' }),
+                  menu: (base) => ({ ...base, zIndex: 20 }),
+                }}
+              />
+              <p className="mt-2 text-sm text-gray-500">可输入关键字快速搜索公司</p>
+              {companyError && <p className="mt-1 text-sm text-red-500">{companyError}</p>}
+            </div>
+            <div>
+              <label htmlFor="alert_type" className="block text-sm font-medium text-gray-700 mb-2">品牌型号</label>
+              <select 
+                id="alert_type" 
+                name="alert_type" 
+                value={selectedModel} 
+                onChange={handleModelChange} 
+                required 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                {models.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="all_nums" className="block text-sm font-medium text-gray-700 mb-2">探头总数量</label>
+              <input 
+                type="number" 
+                id="all_nums" 
+                name="all_nums" 
+                required 
+                min={1} 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="请输入探头总数" 
+              />
+            </div>
+            <div>
+              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">检测日期</label>
+              <input 
+                type="date" 
+                id="date" 
+                name="date" 
+                required 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                defaultValue={new Date().toISOString().split('T')[0]} 
+              />
+            </div>
+            <div>
+              <label htmlFor="start_num" className="block text-sm font-medium text-gray-700 mb-2">探头起始编号</label>
+              <input 
+                type="number" 
+                id="start_num" 
+                name="start_num" 
+                required 
+                min={1} 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="请输入起始编号" 
+                defaultValue="1" 
+              />
             </div>
           </div>
-          <div>
-            <label htmlFor="sections" className="block font-medium mb-1">探头分布区域</label>
-            <input type="text" id="sections" name="sections" required className="w-full border rounded px-3 py-2" placeholder="例如：厨房 大厅 或 厨房,大厅" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-2">温度（°C）</label>
+              <input 
+                type="number" 
+                id="temperature" 
+                name="temperature" 
+                step="0.1" 
+                required 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="如: 20.0" 
+                defaultValue="20.0" 
+              />
+            </div>
+            <div>
+              <label htmlFor="humidity" className="block text-sm font-medium text-gray-700 mb-2">湿度（%）</label>
+              <input 
+                type="number" 
+                id="humidity" 
+                name="humidity" 
+                required 
+                min={0} 
+                max={100} 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="如: 50" 
+                defaultValue="50" 
+              />
+            </div>
           </div>
-          <div>
-            <label htmlFor="sections_num" className="block font-medium mb-1">各区域探头数量</label>
-            <input type="text" id="sections_num" name="sections_num" required className="w-full border rounded px-3 py-2" placeholder="例如：4 6 或 4,6" />
+
+          <div className="space-y-8">
+            <div>
+              <label htmlFor="sections" className="block text-sm font-medium text-gray-700 mb-2">探头分布区域</label>
+              <input 
+                type="text" 
+                id="sections" 
+                name="sections" 
+                required 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="例如：厨房 大厅 或 厨房,大厅" 
+              />
+            </div>
+            <div>
+              <label htmlFor="sections_num" className="block text-sm font-medium text-gray-700 mb-2">各区域探头数量</label>
+              <input 
+                type="text" 
+                id="sections_num" 
+                name="sections_num" 
+                required 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="例如：4 6 或 4,6" 
+              />
+            </div>
+            <div>
+              <label htmlFor="problem_nums" className="block text-sm font-medium text-gray-700 mb-2">故障探头编号（可选）</label>
+              <input
+                type="text"
+                id="problem_nums"
+                name="problem_nums"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="如 1-3 5 7-8"
+              />
+              <p className="mt-2 text-sm text-gray-500">支持区间和空格分隔，如 1-3 5 7-8</p>
+            </div>
           </div>
-          <div>
-            <label htmlFor="start_num" className="block font-medium mb-1">探头起始编号</label>
-            <input type="number" id="start_num" name="start_num" required min={1} className="w-full border rounded px-3 py-2" placeholder="请输入起始编号" defaultValue="1" />
+
+          <div className="pt-4">
+            <button 
+              type="submit" 
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" 
+              disabled={loading}
+            >
+              {loading ? "生成中..." : "生成证书"}
+            </button>
           </div>
-          <div>
-            <label htmlFor="problem_nums" className="block font-medium mb-1">故障探头编号（可选）</label>
-            <input
-              type="text"
-              id="problem_nums"
-              name="problem_nums"
-              className="w-full border rounded px-3 py-2"
-              placeholder="如 1-3 5 7-8"
-            />
-            <p className="text-xs text-gray-500">支持区间和空格分隔，如 1-3 5 7-8</p>
-          </div>
-          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-300" disabled={loading}>
-            {loading ? "生成中..." : "生成证书"}
-          </button>
         </form>
-        {message && <div className="mt-4 text-center text-blue-600">{message}</div>}
+        {message && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg text-blue-600 text-center">
+            {message}
+          </div>
+        )}
         {downloadUrl && (
-          <div className="mt-4 text-center">
-            <a href={downloadUrl} download="certificates.zip" className="text-blue-500 underline">下载证书 zip 文件</a>
+          <div className="mt-6 text-center">
+            <a 
+              href={downloadUrl} 
+              download="certificates.zip" 
+              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+            >
+              下载证书 zip 文件
+            </a>
           </div>
         )}
       </div>

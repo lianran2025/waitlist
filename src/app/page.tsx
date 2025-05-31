@@ -1,140 +1,51 @@
-'use client'
+import Link from 'next/link';
+import { DocumentTextIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 
-import { Company } from '@prisma/client'
-import { useEffect, useState } from 'react'
-import { CompanyCard } from '@/components/CompanyCard'
-import { CreateCompanyDialog } from '@/components/CreateCompanyDialog'
-import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline'
-
-export default function HomePage() {
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-
-  const fetchCompanies = async () => {
-    try {
-      const response = await fetch('/api/companies')
-      if (!response.ok) {
-        throw new Error('获取公司列表失败')
-      }
-      const data = await response.json()
-      setCompanies(data)
-      setFilteredCompanies(data)
-    } catch (error) {
-      setError('加载公司列表失败，请刷新页面重试')
-      console.error('Error fetching companies:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchCompanies()
-  }, [])
-
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredCompanies(companies)
-      return
-    }
-
-    const searchTermLower = searchTerm.toLowerCase()
-    const filtered = companies.filter(company => 
-      company.shortName.toLowerCase().includes(searchTermLower) ||
-      company.fullName.toLowerCase().includes(searchTermLower)
-    )
-    setFilteredCompanies(filtered)
-  }, [searchTerm, companies])
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-md p-6 h-48" />
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
+export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">越鑫检测报告公司信息</h1>
-        
-        {/* 搜索框 */}
-        <div className="mb-8">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <h1 className="text-4xl font-bold mb-12 text-gray-800">功能选择</h1>
+      <div className="flex gap-8">
+        <Link 
+          href="/new-project" 
+          className="group relative block p-8 rounded-2xl bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-white transition-all duration-300 shadow-lg hover:shadow-xl border border-gray-100 hover:border-blue-100 text-center w-80 transform hover:-translate-y-1"
+        >
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors duration-300">
+                <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+              </div>
             </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="搜索公司名称或简称..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
+            <div className="text-xl font-semibold mb-2 text-gray-800 group-hover:text-blue-600 transition-colors duration-300">
+              证书生成工具
+            </div>
+            <div className="text-gray-500 group-hover:text-gray-600">
+              批量生成证书、支持探头异常处理
+            </div>
           </div>
-        </div>
+        </Link>
 
-        {/* 公司列表或空状态 */}
-        {filteredCompanies.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCompanies.map(company => (
-              <CompanyCard
-                key={company.id}
-                company={company}
-                onUpdate={fetchCompanies}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-sm p-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm ? '未找到匹配的公司' : '暂无公司信息'}
-              </h3>
-              <p className="text-gray-500 mb-6">
-                {searchTerm 
-                  ? '请尝试其他搜索关键词'
-                  : '点击下方按钮添加新公司'}
-              </p>
-              <button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                添加新公司
-              </button>
+        <Link 
+          href="/companies" 
+          className="group relative block p-8 rounded-2xl bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-white transition-all duration-300 shadow-lg hover:shadow-xl border border-gray-100 hover:border-blue-100 text-center w-80 transform hover:-translate-y-1"
+        >
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors duration-300">
+                <BuildingOfficeIcon className="h-8 w-8 text-blue-600" />
+              </div>
+            </div>
+            <div className="text-xl font-semibold mb-2 text-gray-800 group-hover:text-blue-600 transition-colors duration-300">
+              探头厂家信息列表
+            </div>
+            <div className="text-gray-500 group-hover:text-gray-600">
+              管理和新增品牌及型号信息
             </div>
           </div>
-        )}
+        </Link>
       </div>
-
-      <CreateCompanyDialog
-        isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
-        onSuccess={fetchCompanies}
-      />
-    </div>
-  )
+    </main>
+  );
 }
