@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Select from 'react-select'
+import { Fragment } from "react"
 
 export default function NewProjectPage() {
   const [loading, setLoading] = useState(false)
@@ -13,6 +14,8 @@ export default function NewProjectPage() {
   const [companyError, setCompanyError] = useState("")
   const [models, setModels] = useState<string[]>([])
   const [selectedModel, setSelectedModel] = useState("")
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [confirmData, setConfirmData] = useState<any>(null)
 
   useEffect(() => {
     fetch("/api/companies/data")
@@ -97,7 +100,25 @@ export default function NewProjectPage() {
       return
     }
 
+    // 新增：弹出二次确认弹窗，展示所有表单项
+    const dataObj: any = {}
+    formData.forEach((v, k) => { dataObj[k] = v })
+    dataObj["alert_factory"] = selectedCompany
+    dataObj["alert_type"] = selectedModel
+    setConfirmData(dataObj)
+    setShowConfirmModal(true)
+    setLoading(false)
+  }
+
+  // 真正生成证书的逻辑，原 handleSubmit 的 try-catch 部分
+  const handleConfirmGenerate = async () => {
+    setShowConfirmModal(false)
+    setLoading(true)
+    setMessage("")
+    setDownloadUrl("")
     try {
+      const formData = new FormData()
+      Object.entries(confirmData).forEach(([k, v]) => formData.append(k, v as string))
       const response = await fetch("/api/generate-certificates", {
         method: "POST",
         body: formData,
@@ -299,6 +320,57 @@ export default function NewProjectPage() {
             </a>
           </div>
         )}
+        {showConfirmModal && (
+          <ConfirmModal
+            data={confirmData}
+            onCancel={() => setShowConfirmModal(false)}
+            onConfirm={handleConfirmGenerate}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () => void, onConfirm: () => void }) {
+  // 字段中文名映射
+  const fieldLabels: Record<string, string> = {
+    company_name: "委托单位名称",
+    alert_factory: "公司名称",
+    alert_type: "品牌型号",
+    all_nums: "探头总数量",
+    date: "检测日期",
+    start_num: "探头起始编号",
+    temperature: "温度（°C）",
+    humidity: "湿度（%）",
+    sections: "探头分布区域",
+    sections_num: "各区域探头数量",
+    problem_nums: "故障探头编号（可选）",
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+        <h3 className="text-xl font-bold mb-6 text-gray-800">请确认以下信息</h3>
+        <ul className="space-y-3">
+          {Object.entries(fieldLabels).map(([key, label]) => (
+            <li key={key} className="flex justify-between border-b pb-2">
+              <span className="text-gray-600">{label}</span>
+              <span className="font-medium text-gray-900">{data?.[key] || <span className="text-gray-400">-</span>}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex justify-end gap-4 mt-8">
+          <button
+            type="button"
+            className="px-5 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+            onClick={onCancel}
+          >返回修改</button>
+          <button
+            type="button"
+            className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            onClick={onConfirm}
+          >确认生成</button>
+        </div>
       </div>
     </div>
   )
