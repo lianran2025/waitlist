@@ -16,6 +16,7 @@ export default function NewProjectPage() {
   const [selectedModel, setSelectedModel] = useState("")
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmData, setConfirmData] = useState<any>(null)
+  const [errorModal, setErrorModal] = useState("")
 
   useEffect(() => {
     fetch("/api/companies/data")
@@ -79,23 +80,27 @@ export default function NewProjectPage() {
     formData.set("alert_factory", selectedCompany)
     formData.set("alert_type", selectedModel)
 
+    // 新增：分布区域与数量一一对应校验（空格分隔）
+    const sections = (formData.get("sections") as string).trim().split(/\s+/).filter(Boolean)
+    // 支持多分隔符：空格、英文逗号、中文逗号
+    const sectionsNumRaw = formData.get("sections_num") as string
+    const sectionsNumArr = sectionsNumRaw.trim().split(/[\s,，]+/).filter(Boolean)
+    if (sections.length !== sectionsNumArr.length) {
+      setErrorModal(`分布区域数量与各区域探头数量不一致，请检查！\n区域：${sections.join(' ')}\n数量：${sectionsNumArr.join(' ')}`)
+      setLoading(false)
+      return
+    }
     // 前端校验
     const allNums = parseInt(formData.get("all_nums") as string)
-    const sections = (formData.get("sections") as string).split(/[,，\s]+/).filter(Boolean)
-    const sectionsNum = (formData.get("sections_num") as string).split(/[,，\s]+/).map(Number).filter(n => !isNaN(n))
-    if (sections.length === 0 || sectionsNum.length === 0) {
-      setMessage("请填写探头分布区域和对应的数量")
+    const sectionsNumFiltered = sectionsNumArr.map(Number).filter(n => !isNaN(n))
+    if (sectionsNumFiltered.length === 0) {
+      setErrorModal("请填写各区域探头数量")
       setLoading(false)
       return
     }
-    if (sections.length !== sectionsNum.length) {
-      setMessage(`区域数量与探头数量分布不匹配\n区域：${sections.join(", ")}\n数量：${sectionsNum.join(", ")}`)
-      setLoading(false)
-      return
-    }
-    const totalProbes = sectionsNum.reduce((a, b) => a + b, 0)
+    const totalProbes = sectionsNumFiltered.reduce((a, b) => a + b, 0)
     if (totalProbes !== allNums) {
-      setMessage(`各区域探头数量之和与总数量不匹配\n总数量：${allNums}\n各区域：${sections.map((s, i) => `${s}(${sectionsNum[i]})`).join(", ")}\n数量之和：${totalProbes}`)
+      setErrorModal(`各区域探头数量之和与总数量不匹配\n总数量：${allNums}\n各区域数量：${sectionsNumArr.join(' ')}\n数量之和：${totalProbes}`)
       setLoading(false)
       return
     }
@@ -132,7 +137,7 @@ export default function NewProjectPage() {
       setDownloadUrl(url)
       setMessage("证书已生成，点击下载 zip 文件")
     } catch (error: any) {
-      setMessage(error.message || "生成证书失败")
+      setErrorModal(error.message || "生成证书失败")
     } finally {
       setLoading(false)
     }
@@ -318,6 +323,18 @@ export default function NewProjectPage() {
             >
               下载证书 zip 文件
             </a>
+          </div>
+        )}
+        {errorModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4 text-red-600">错误提示</h3>
+              <div className="mb-6 whitespace-pre-line text-gray-800">{errorModal}</div>
+              <button
+                className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                onClick={() => setErrorModal("")}
+              >关闭</button>
+            </div>
           </div>
         )}
         {showConfirmModal && (
