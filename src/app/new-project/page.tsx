@@ -136,8 +136,8 @@ export default function NewProjectPage() {
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       setDownloadUrl(url)
-      // 动态设置压缩包名称：公司名+日期.zip
-      const company = confirmData?.alert_factory || '证书'
+      // 动态设置压缩包名称：委托单位名称+日期.zip
+      const company = confirmData?.company_name || '证书'
       const date = confirmData?.date || ''
       setZipName(`${company} ${date}.zip`)
       setMessage("证书已生成，点击下载 zip 文件")
