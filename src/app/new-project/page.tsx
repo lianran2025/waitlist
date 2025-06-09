@@ -17,6 +17,7 @@ export default function NewProjectPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmData, setConfirmData] = useState<any>(null)
   const [errorModal, setErrorModal] = useState("")
+  const [zipName, setZipName] = useState('证书.zip')
 
   useEffect(() => {
     fetch("/api/companies/data")
@@ -135,6 +136,10 @@ export default function NewProjectPage() {
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       setDownloadUrl(url)
+      // 动态设置压缩包名称：公司名+日期.zip
+      const company = confirmData?.alert_factory || '证书'
+      const date = confirmData?.date || ''
+      setZipName(`${company} ${date}.zip`)
       setMessage("证书已生成，点击下载 zip 文件")
     } catch (error: any) {
       setErrorModal(error.message || "生成证书失败")
@@ -318,7 +323,7 @@ export default function NewProjectPage() {
           <div className="mt-6 text-center">
             <a 
               href={downloadUrl} 
-              download="certificates.zip" 
+              download={zipName}
               className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
             >
               下载证书 zip 文件
