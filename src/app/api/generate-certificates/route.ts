@@ -4,6 +4,8 @@ import path from 'path'
 import PizZip from 'pizzip'
 import Docxtemplater from 'docxtemplater'
 import JSZip from 'jszip'
+import axios from 'axios'
+import FormData from 'form-data'
 
 export async function POST(req: NextRequest) {
   try {
@@ -102,7 +104,8 @@ export async function POST(req: NextRequest) {
     const allAlertNums = createAllAlertsNumList(sections, sectionsNum);
     const zip = new JSZip();
 
-    // 生成所有证书
+    // 1. 生成所有 docx 并打包 zip（保留原有逻辑）
+    const docxBuffers: { name: string, buffer: Buffer }[] = [];
     for (let i = 0; i < allNums; i++) {
       const [date_now, date_next] = formatDate(String(date));
       const fileNum = getFileNum(String(date), i, startNum);
@@ -162,21 +165,61 @@ export async function POST(req: NextRequest) {
       }
 
       const out = doc.getZip().generate({ type: 'nodebuffer' });
-      zip.file(`${companyName}_${fileNum}_${alertNum}.docx`, out);
+      const docxName = `${companyName}_${fileNum}_${alertNum}.docx`;
+      zip.file(docxName, out);
+      docxBuffers.push({ name: docxName, buffer: out });
     }
-
-    // 生成最终的 zip 文件
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
-    // 返回 zip 文件
-    return new Response(zipBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="certificates.zip"`,
-      },
+    // 2. 上传所有 docx 到 Windows 服务器
+    const winApi = 'http://139.196.115.44:5000';
+    const nodeForm = new FormData();
+    docxBuffers.forEach(doc => {
+      nodeForm.append('files', doc.buffer, { filename: doc.name });
     });
+    // submit 方法是 callback 风格，需要 Promise 封装
+    const uploadResp = await new Promise((resolve, reject) => {
+      nodeForm.submit(`${winApi}/upload`, (err, res) => {
+        if (err) return reject(err);
+        let raw = '';
+        res.setEncoding('utf8');
+        res.on('data', chunk => raw += chunk);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(raw));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+    });
+    const taskId = (uploadResp as any).task_id;
 
+    // 3. 立即返回 taskId，前端可用 taskId 轮询进度
+    const docxZipUrl = `${winApi}/download/${taskId}/docx`;
+    const pdfUrl = `${winApi}/download/${taskId}/merged`;
+    // 4. 后台异步串联调用 convert/merge
+    setImmediate(async () => {
+      try {
+        console.log(`[后台] 开始转换 PDF，taskId=${taskId}`);
+        await axios.post(`${winApi}/convert/${taskId}`, {}, { timeout: 300000 });
+        console.log(`[后台] 转换 PDF 完成，taskId=${taskId}`);
+        await axios.post(`${winApi}/merge/${taskId}`, {}, { timeout: 300000 });
+        console.log(`[后台] 合并 PDF 完成，taskId=${taskId}`);
+      } catch (e) {
+        console.error(`[后台] 合并流程异常，taskId=${taskId}`, e);
+      }
+    });
+    // 5. 立即响应
+    return new Response(JSON.stringify({
+      status: 'success',
+      taskId,
+      docxZipUrl,
+      pdfUrl
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error: any) {
     console.error('生成证书时出错:', error);
     return new Response(JSON.stringify({ 

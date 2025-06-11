@@ -1,13 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Select from 'react-select'
 import { Fragment } from "react"
 
 export default function NewProjectPage() {
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [progressText, setProgressText] = useState('')
+  const [polling, setPolling] = useState(false)
+  const [taskId, setTaskId] = useState('')
   const [message, setMessage] = useState("")
   const [downloadUrl, setDownloadUrl] = useState("")
+  const [pdfUrl, setPdfUrl] = useState("")
   const [companies, setCompanies] = useState<any[]>([])
   const [selectedCompany, setSelectedCompany] = useState("")
   const [selectedCompanyOption, setSelectedCompanyOption] = useState<any>(null)
@@ -18,6 +23,9 @@ export default function NewProjectPage() {
   const [confirmData, setConfirmData] = useState<any>(null)
   const [errorModal, setErrorModal] = useState("")
   const [zipName, setZipName] = useState('证书.zip')
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const [mergeDone, setMergeDone] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
 
   useEffect(() => {
     fetch("/api/companies/data")
@@ -116,33 +124,91 @@ export default function NewProjectPage() {
     setLoading(false)
   }
 
+  // 轮询进度
+  const pollProgress = (taskId: string) => {
+    setPolling(true);
+    setProgress(0);
+    setProgressText('正在准备转换...');
+    setMergeDone(false);
+    setErrorCount(0);
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(async () => {
+      try {
+        const resp = await fetch(`http://139.196.115.44:5000/progress/${taskId}`);
+        if (!resp.ok) throw new Error('进度查询失败');
+        const data = await resp.json();
+        setErrorCount(0); // 成功则清零
+        if (data.total > 0) {
+          setProgress(Math.round((data.current / data.total) * 100));
+          setProgressText(
+            data.done
+              ? '全部转换完成'
+              : `正在处理第 ${data.current} / ${data.total} 个文件：${data.current_file}`
+          );
+        }
+        if (data.done) {
+          setTimeout(() => setMergeDone(true), 1000);
+          clearInterval(pollingRef.current!);
+          setPolling(false);
+          setProgress(100);
+          setProgressText('全部转换完成');
+        }
+      } catch (e) {
+        setErrorCount(cnt => {
+          if (cnt >= 2) {
+            setProgressText('进度查询异常，请刷新页面或稍后重试');
+            clearInterval(pollingRef.current!);
+            setPolling(false);
+          } else {
+            setProgressText('进度查询异常，正在重试...');
+          }
+          return cnt + 1;
+        });
+      }
+    }, 1000);
+  };
+
   // 真正生成证书的逻辑，原 handleSubmit 的 try-catch 部分
   const handleConfirmGenerate = async () => {
     setShowConfirmModal(false)
     setLoading(true)
     setMessage("")
     setDownloadUrl("")
+    setPdfUrl("")
+    setProgress(10)
+    setProgressText('正在上传并生成证书...')
     try {
       const formData = new FormData()
       Object.entries(confirmData).forEach(([k, v]) => formData.append(k, v as string))
+      setProgress(20)
       const response = await fetch("/api/generate-certificates", {
         method: "POST",
         body: formData,
       })
+      setProgress(60)
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.message || "生成证书失败")
       }
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      setDownloadUrl(url)
-      // 动态设置压缩包名称：委托单位名称+日期.zip
-      const company = confirmData?.company_name || '证书'
-      const date = confirmData?.date || ''
-      setZipName(`${company} ${date}.zip`)
-      setMessage("证书已生成，点击下载 zip 文件")
+      const data = await response.json()
+      // 解析 taskId
+      let taskId = data.taskId;
+      if (!taskId) {
+        // 尝试从 docxZipUrl 或 pdfUrl 中解析
+        const match = (data.docxZipUrl || data.pdfUrl || '').match(/download\/(.*?)\//);
+        if (match) taskId = match[1];
+      }
+      setTaskId(taskId);
+      setProgress(80)
+      setDownloadUrl(data.docxZipUrl)
+      setPdfUrl(data.pdfUrl)
+      // 启动进度轮询
+      if (taskId) pollProgress(taskId);
+      else setProgressText('无法获取任务进度');
     } catch (error: any) {
       setErrorModal(error.message || "生成证书失败")
+      setProgress(0)
+      setProgressText('')
     } finally {
       setLoading(false)
     }
@@ -314,19 +380,21 @@ export default function NewProjectPage() {
             </button>
           </div>
         </form>
-        {message && (
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg text-blue-600 text-center">
-            {message}
-          </div>
+        <div style={{ width: '100%', background: '#eee', margin: '20px 0', height: 10, borderRadius: 5 }}>
+          <div style={{ width: `${progress}%`, height: 10, background: '#00BFA5', borderRadius: 5, transition: 'width 0.5s' }} />
+        </div>
+        {progressText && (
+          <div className="mt-2 text-sm text-gray-600 text-center">{progressText}</div>
         )}
-        {downloadUrl && (
+        {mergeDone && pdfUrl && (
           <div className="mt-6 text-center">
             <a 
-              href={downloadUrl} 
-              download={zipName}
-              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+              href={pdfUrl} 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              下载证书 zip 文件
+              下载合并后的 PDF 文件
             </a>
           </div>
         )}
