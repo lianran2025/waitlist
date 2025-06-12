@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "越鑫检测报告公司信息",
+  title: "越鑫检测证书管理系统",
   description: "公司信息管理系统",
 };
 
