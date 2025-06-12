@@ -204,9 +204,8 @@ export async function POST(req: NextRequest) {
     const taskId = (uploadResp as any).task_id;
 
     // 3. 立即返回 taskId，前端可用 taskId 轮询进度
-    // 生成压缩包名称：委托单位名称+检测日期.zip
-    const [date_now] = formatDate(String(date));
-    const zipFileName = `${companyName}${date_now}.zip`;
+    // 生成压缩包名称：委托单位名称+简化日期格式.zip (如：XX公司20250612.zip)
+    const zipFileName = `${companyName}${date}.zip`;
     
     const docxZipUrl = `${winApi}/download/${taskId}/docx`;
     const pdfUrl = `${winApi}/download/${taskId}/merged`;
