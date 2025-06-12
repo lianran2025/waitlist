@@ -196,8 +196,14 @@ export async function POST(req: NextRequest) {
     const taskId = (uploadResp as any).task_id;
 
     // 3. 立即返回 taskId，前端可用 taskId 轮询进度
+    // 生成压缩包名称：委托单位名称+检测日期.zip
+    const [date_now] = formatDate(String(date));
+    const zipFileName = `${companyName}${date_now}.zip`;
+    
     const docxZipUrl = `${winApi}/download/${taskId}/docx`;
     const pdfUrl = `${winApi}/download/${taskId}/merged`;
+    const completeZipUrl = `${winApi}/download/${taskId}/complete?filename=${encodeURIComponent(zipFileName)}`;
+    
     // 4. 后台异步串联调用 convert/merge
     setImmediate(async () => {
       try {
@@ -206,6 +212,11 @@ export async function POST(req: NextRequest) {
         console.log(`[后台] 转换 PDF 完成，taskId=${taskId}`);
         await axios.post(`${winApi}/merge/${taskId}`, {}, { timeout: 300000 });
         console.log(`[后台] 合并 PDF 完成，taskId=${taskId}`);
+        // 新增：生成完整压缩包
+        await axios.post(`${winApi}/package/${taskId}`, { 
+          filename: zipFileName 
+        }, { timeout: 300000 });
+        console.log(`[后台] 生成完整压缩包完成，taskId=${taskId}`);
       } catch (e) {
         console.error(`[后台] 合并流程异常，taskId=${taskId}`, e);
       }
@@ -215,7 +226,9 @@ export async function POST(req: NextRequest) {
       status: 'success',
       taskId,
       docxZipUrl,
-      pdfUrl
+      pdfUrl,
+      completeZipUrl,
+      zipFileName
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

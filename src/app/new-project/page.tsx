@@ -13,6 +13,8 @@ export default function NewProjectPage() {
   const [message, setMessage] = useState("")
   const [downloadUrl, setDownloadUrl] = useState("")
   const [pdfUrl, setPdfUrl] = useState("")
+  const [completeZipUrl, setCompleteZipUrl] = useState("")
+  const [zipFileName, setZipFileName] = useState("")
   const [companies, setCompanies] = useState<any[]>([])
   const [selectedCompany, setSelectedCompany] = useState("")
   const [selectedCompanyOption, setSelectedCompanyOption] = useState<any>(null)
@@ -138,20 +140,31 @@ export default function NewProjectPage() {
         if (!resp.ok) throw new Error('进度查询失败');
         const data = await resp.json();
         setErrorCount(0); // 成功则清零
-        if (data.total > 0) {
-          setProgress(Math.round((data.current / data.total) * 100));
-          setProgressText(
-            data.done
-              ? '全部转换完成'
-              : `正在处理第 ${data.current} / ${data.total} 个文件：${data.current_file}`
-          );
+        
+        // 更新进度文本，支持多阶段处理
+        let progressText = '';
+        if (data.total > 0 && data.current < data.total) {
+          progressText = `正在处理第 ${data.current} / ${data.total} 个文件：${data.current_file}`;
+          setProgress(Math.round((data.current / data.total) * 60)); // 转换阶段占60%
+        } else if (data.convert_done && !data.merge_done) {
+          progressText = '正在合并PDF文件...';
+          setProgress(70);
+        } else if (data.merge_done && !data.package_done) {
+          progressText = '正在生成完整压缩包...';
+          setProgress(85);
+        } else if (data.done) {
+          progressText = '所有处理完成，可以下载了！';
+          setProgress(100);
         }
+        
+        setProgressText(progressText);
+        
         if (data.done) {
           setTimeout(() => setMergeDone(true), 1000);
           clearInterval(pollingRef.current!);
           setPolling(false);
           setProgress(100);
-          setProgressText('全部转换完成');
+          setProgressText('所有处理完成，可以下载了！');
         }
       } catch (e) {
         setErrorCount(cnt => {
@@ -175,6 +188,8 @@ export default function NewProjectPage() {
     setMessage("")
     setDownloadUrl("")
     setPdfUrl("")
+    setCompleteZipUrl("")
+    setZipFileName("")
     setProgress(10)
     setProgressText('正在上传并生成证书...')
     try {
@@ -202,6 +217,8 @@ export default function NewProjectPage() {
       setProgress(80)
       setDownloadUrl(data.docxZipUrl)
       setPdfUrl(data.pdfUrl)
+      setCompleteZipUrl(data.completeZipUrl)
+      setZipFileName(data.zipFileName || '证书包.zip')
       // 启动进度轮询
       if (taskId) pollProgress(taskId);
       else setProgressText('无法获取任务进度');
@@ -386,16 +403,22 @@ export default function NewProjectPage() {
         {progressText && (
           <div className="mt-2 text-sm text-gray-600 text-center">{progressText}</div>
         )}
-        {mergeDone && pdfUrl && (
+        {mergeDone && completeZipUrl && (
           <div className="mt-6 text-center">
             <a 
-              href={pdfUrl} 
+              href={completeZipUrl} 
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
             >
-              下载合并后的 PDF 文件
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              下载完整证书包 ({zipFileName})
             </a>
+            <p className="mt-2 text-sm text-gray-500">
+              包含所有Word证书文件和合并后的PDF文件
+            </p>
           </div>
         )}
         {errorModal && (
