@@ -91,12 +91,22 @@ export default function NewProjectPage() {
     formData.set("alert_factory", selectedCompany)
     formData.set("alert_type", selectedModel)
 
-    // 新增：分布区域与数量一一对应校验（空格分隔）
-    const sections = (formData.get("sections") as string).trim().split(/\s+/).filter(Boolean)
+    // 修改：分布区域可选，留空时按单个空区域处理
+    const sectionsRaw = (formData.get("sections") as string || "").trim()
+    const sections = sectionsRaw ? sectionsRaw.split(/\s+/).filter(Boolean) : [""]
     // 支持多分隔符：空格、英文逗号、中文逗号
     const sectionsNumRaw = formData.get("sections_num") as string
     const sectionsNumArr = sectionsNumRaw.trim().split(/[\s,，]+/).filter(Boolean)
-    if (sections.length !== sectionsNumArr.length) {
+    
+    // 如果区域为空，则只允许一个数量值
+    if (sectionsRaw === "" && sectionsNumArr.length !== 1) {
+      setErrorModal(`探头分布区域为空时，只能填写一个总数量值`)
+      setLoading(false)
+      return
+    }
+    
+    // 如果区域不为空，则需要与数量一一对应
+    if (sectionsRaw !== "" && sections.length !== sectionsNumArr.length) {
       setErrorModal(`分布区域数量与各区域探头数量不一致，请检查！\n区域：${sections.join(' ')}\n数量：${sectionsNumArr.join(' ')}`)
       setLoading(false)
       return
@@ -353,15 +363,19 @@ export default function NewProjectPage() {
 
           <div className="space-y-8">
             <div>
-              <label htmlFor="sections" className="block text-sm font-medium text-gray-700 mb-2">探头分布区域</label>
+              <label htmlFor="sections" className="block text-sm font-medium text-gray-700 mb-2">
+                探头分布区域 <span className="text-gray-500 text-sm">(可选)</span>
+              </label>
               <input 
                 type="text" 
                 id="sections" 
                 name="sections" 
-                required 
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="例如：厨房 大厅 或 厨房,大厅" 
+                placeholder="例如：厨房 大厅 或 厨房,大厅 (留空则不按区域分布)" 
               />
+              <p className="mt-1 text-sm text-gray-500">
+                留空时将所有探头视为一个整体，不按区域分布
+              </p>
             </div>
             <div>
               <label htmlFor="sections_num" className="block text-sm font-medium text-gray-700 mb-2">各区域探头数量</label>
@@ -371,8 +385,11 @@ export default function NewProjectPage() {
                 name="sections_num" 
                 required 
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="例如：4 6 或 4,6" 
+                placeholder="例如：4 6 或 4,6 (区域为空时只填总数量)" 
               />
+              <p className="mt-1 text-sm text-gray-500">
+                如果区域为空，只需填写总数量；如果有区域，需要与区域数量对应
+              </p>
             </div>
             <div>
               <label htmlFor="problem_nums" className="block text-sm font-medium text-gray-700 mb-2">故障探头编号（可选）</label>

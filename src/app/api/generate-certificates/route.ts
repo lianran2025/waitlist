@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
     const date = formData.get('date') as string
     const temperature = formData.get('temperature') as string
     const humidity = formData.get('humidity') as string
-    const sections = (formData.get('sections') as string).split(/[,，\s]+/).filter(Boolean)
+    const sectionsRaw = (formData.get('sections') as string || '').trim()
+    const sections = sectionsRaw ? sectionsRaw.split(/[,，\s]+/).filter(Boolean) : ['']
     const sectionsNum = (formData.get('sections_num') as string).split(/[,，\s]+/).map(Number).filter(n => !isNaN(n))
     const startNum = parseInt(formData.get('start_num') as string)
     const alertFactory = formData.get('alert_factory') as string;
@@ -23,10 +24,17 @@ export async function POST(req: NextRequest) {
     const problemNumsRaw = formData.get('problem_nums') as string | null;
 
     // 校验
-    if (!companyName || !allNums || !date || !temperature || !humidity || !sections.length || !sectionsNum.length || isNaN(startNum)) {
+    if (!companyName || !allNums || !date || !temperature || !humidity || !sectionsNum.length || isNaN(startNum)) {
       return new Response(JSON.stringify({ message: '参数不完整' }), { status: 400 })
     }
-    if (sections.length !== sectionsNum.length) {
+    
+    // 如果区域为空，只允许一个数量值
+    if (sectionsRaw === '' && sectionsNum.length !== 1) {
+      return new Response(JSON.stringify({ message: '探头分布区域为空时，只能填写一个总数量值' }), { status: 400 })
+    }
+    
+    // 如果区域不为空，需要与数量一一对应
+    if (sectionsRaw !== '' && sections.length !== sectionsNum.length) {
       return new Response(JSON.stringify({ message: '区域数量与探头数量分布不匹配' }), { status: 400 })
     }
     const totalProbes = sectionsNum.reduce((a, b) => a + b, 0)
