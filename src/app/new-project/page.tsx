@@ -28,6 +28,7 @@ export default function NewProjectPage() {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const [mergeDone, setMergeDone] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
+  const [logs, setLogs] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/companies/data")
@@ -150,6 +151,8 @@ export default function NewProjectPage() {
         if (!resp.ok) throw new Error('进度查询失败');
         const data = await resp.json();
         setErrorCount(0); // 成功则清零
+        // 新增：同步日志
+        setLogs(data.logs || []);
         
         // 更新进度文本，支持多阶段处理
         let progressText = '';
@@ -419,6 +422,12 @@ export default function NewProjectPage() {
         </div>
         {progressText && (
           <div className="mt-2 text-sm text-gray-600 text-center">{progressText}</div>
+        )}
+        {/* 新增：日志展示区 */}
+        {logs.length > 0 && (
+          <div className="bg-gray-100 rounded p-4 mt-4 max-h-60 overflow-y-auto text-xs font-mono">
+            {logs.map((log, idx) => <div key={idx}>{log}</div>)}
+          </div>
         )}
         {mergeDone && completeZipUrl && (
           <div className="mt-6 text-center">
