@@ -140,58 +140,68 @@ export default function NewProjectPage() {
   // 轮询进度
   const pollProgress = (taskId: string) => {
     setPolling(true);
-    setProgress(0);
-    setProgressText('正在准备转换...');
+    setProgress(20); // 开始时设置为20%
+    setProgressText('后台正在处理，请耐心等待...');
     setMergeDone(false);
     setErrorCount(0);
     if (pollingRef.current) clearInterval(pollingRef.current);
+    
     pollingRef.current = setInterval(async () => {
       try {
         const resp = await fetch(`http://139.196.115.44:5000/progress/${taskId}`);
         if (!resp.ok) throw new Error('进度查询失败');
         const data = await resp.json();
         setErrorCount(0); // 成功则清零
-        // 新增：同步日志
+        
+        // 同步日志
         setLogs(data.logs || []);
         
-        // 更新进度文本，支持多阶段处理
-        let progressText = '';
+        // 简化的进度显示逻辑
+        let progressText = '后台正在处理，请耐心等待...';
+        let progressValue = 20;
+        
+        // 根据任务状态更新进度
         if (data.total > 0 && data.current < data.total) {
-          progressText = `正在处理第 ${data.current} / ${data.total} 个文件：${data.current_file}`;
-          setProgress(Math.round((data.current / data.total) * 60)); // 转换阶段占60%
+          // 转换阶段
+          progressText = `正在转换第 ${data.current} / ${data.total} 个文件`;
+          progressValue = 20 + Math.round((data.current / data.total) * 40); // 20% - 60%
         } else if (data.convert_done && !data.merge_done) {
+          // 合并阶段
           progressText = '正在合并PDF文件...';
-          setProgress(70);
+          progressValue = 70;
         } else if (data.merge_done && !data.package_done) {
+          // 打包阶段
           progressText = '正在生成完整压缩包...';
-          setProgress(85);
+          progressValue = 85;
         } else if (data.done) {
-          progressText = '所有处理完成，可以下载了！';
-          setProgress(100);
+          // 全部完成
+          progressText = '处理完成，可以下载了！';
+          progressValue = 100;
         }
         
+        setProgress(progressValue);
         setProgressText(progressText);
         
+        // 只有在真正完成时才显示下载按钮
         if (data.done) {
           setTimeout(() => setMergeDone(true), 1000);
           clearInterval(pollingRef.current!);
           setPolling(false);
-          setProgress(100);
-          setProgressText('所有处理完成，可以下载了！');
         }
+        
       } catch (e) {
         setErrorCount(cnt => {
           if (cnt >= 2) {
-            setProgressText('进度查询异常，请刷新页面或稍后重试');
+            setProgressText('后台连接中断，请检查网络或刷新页面重试');
             clearInterval(pollingRef.current!);
             setPolling(false);
           } else {
-            setProgressText('进度查询异常，正在重试...');
+            setProgressText('网络异常，正在重试...');
           }
           return cnt + 1;
         });
       }
-    }, 1000);
+    }, 2000); // 改为2秒轮询一次，减少服务器压力
   };
 
   // 真正生成证书的逻辑，原 handleSubmit 的 try-catch 部分
@@ -204,21 +214,24 @@ export default function NewProjectPage() {
     setCompleteZipUrl("")
     setZipFileName("")
     setProgress(10)
-    setProgressText('正在上传并生成证书...')
+    setProgressText('正在生成证书并上传到服务器...')
+    
     try {
       const formData = new FormData()
       Object.entries(confirmData).forEach(([k, v]) => formData.append(k, v as string))
-      setProgress(20)
+      
       const response = await fetch("/api/generate-certificates", {
         method: "POST",
         body: formData,
       })
-      setProgress(60)
+      
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.message || "生成证书失败")
       }
+      
       const data = await response.json()
+      
       // 解析 taskId
       let taskId = data.taskId;
       if (!taskId) {
@@ -226,15 +239,24 @@ export default function NewProjectPage() {
         const match = (data.docxZipUrl || data.pdfUrl || '').match(/download\/(.*?)\//);
         if (match) taskId = match[1];
       }
+      
       setTaskId(taskId);
-      setProgress(80)
       setDownloadUrl(data.docxZipUrl)
       setPdfUrl(data.pdfUrl)
       setCompleteZipUrl(data.completeZipUrl)
       setZipFileName(data.zipFileName || '证书包.zip')
+      
       // 启动进度轮询
-      if (taskId) pollProgress(taskId);
-      else setProgressText('无法获取任务进度');
+      if (taskId) {
+        setProgress(15)
+        setProgressText('证书已生成，正在启动后台处理...')
+        // 稍微延迟启动轮询，让后台任务有时间初始化
+        setTimeout(() => pollProgress(taskId), 1000);
+      } else {
+        setProgressText('无法获取任务进度，请联系管理员')
+        setProgress(0)
+      }
+      
     } catch (error: any) {
       setErrorModal(error.message || "生成证书失败")
       setProgress(0)
@@ -417,33 +439,76 @@ export default function NewProjectPage() {
             </button>
           </div>
         </form>
-        <div style={{ width: '100%', background: '#eee', margin: '20px 0', height: 10, borderRadius: 5 }}>
-          <div style={{ width: `${progress}%`, height: 10, background: '#00BFA5', borderRadius: 5, transition: 'width 0.5s' }} />
-        </div>
-        {progressText && (
-          <div className="mt-2 text-sm text-gray-600 text-center">{progressText}</div>
-        )}
-        {/* 新增：日志展示区 */}
-        {logs.length > 0 && (
-          <div className="bg-gray-100 rounded p-4 mt-4 max-h-60 overflow-y-auto text-xs font-mono">
-            {logs.map((log, idx) => <div key={idx}>{log}</div>)}
+        {/* 优化的进度显示 */}
+        {(loading || polling || progress > 0) && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-900">处理进度</span>
+              <span className="text-sm font-medium text-blue-900">{progress}%</span>
+            </div>
+            <div className="w-full bg-blue-200 rounded-full h-3 overflow-hidden">
+              <div 
+                className="h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            {progressText && (
+              <div className="mt-3 text-sm text-blue-800 text-center font-medium">
+                {progressText}
+              </div>
+            )}
+            {polling && (
+              <div className="mt-2 flex items-center justify-center text-xs text-blue-600">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"></div>
+                实时监控中...
+              </div>
+            )}
           </div>
         )}
+        {/* 处理日志展示区 - 只在轮询时显示 */}
+        {polling && logs.length > 0 && (
+          <div className="mt-4">
+            <details className="bg-gray-50 rounded-lg">
+              <summary className="px-3 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 rounded-lg">
+                查看处理详情 ({logs.length} 条记录)
+              </summary>
+              <div className="px-3 pb-3 max-h-40 overflow-y-auto text-xs font-mono text-gray-700 space-y-1">
+                {logs.slice(-10).map((log, idx) => (
+                  <div key={idx} className="py-1 border-b border-gray-200 last:border-b-0">
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        )}
+        {/* 下载区域 - 只在真正完成时显示 */}
         {mergeDone && completeZipUrl && (
-          <div className="mt-6 text-center">
+          <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200 text-center">
+            <div className="flex items-center justify-center mb-3">
+              <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-medium text-green-900 mb-2">处理完成！</h3>
+            <p className="text-sm text-green-700 mb-4">
+              所有证书已生成完成，包含Word文档和PDF文件
+            </p>
             <a 
               href={completeZipUrl} 
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              下载完整证书包 ({zipFileName})
+              下载完整证书包
             </a>
-            <p className="mt-2 text-sm text-gray-500">
-              包含所有Word证书文件和合并后的PDF文件
+            <p className="mt-2 text-xs text-green-600">
+              文件名：{zipFileName}
             </p>
           </div>
         )}
