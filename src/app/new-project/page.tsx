@@ -30,6 +30,12 @@ export default function NewProjectPage() {
   const [errorCount, setErrorCount] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
 
+  // 添加日志函数
+  const addLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+  };
+
   useEffect(() => {
     fetch("/api/companies/data")
       .then(res => res.json())
@@ -138,71 +144,55 @@ export default function NewProjectPage() {
   }
 
   // 轮询进度
-  const pollProgress = (taskId: string) => {
-    setPolling(true);
-    setProgress(20); // 开始时设置为20%
-    setProgressText('后台正在处理，请耐心等待...');
-    setMergeDone(false);
-    setErrorCount(0);
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    
-    pollingRef.current = setInterval(async () => {
-      try {
-        const resp = await fetch(`http://139.196.115.44:5000/progress/${taskId}`);
-        if (!resp.ok) throw new Error('进度查询失败');
-        const data = await resp.json();
-        setErrorCount(0); // 成功则清零
-        
-        // 同步日志
-        setLogs(data.logs || []);
-        
-        // 简化的进度显示逻辑
-        let progressText = '后台正在处理，请耐心等待...';
-        let progressValue = 20;
-        
-        // 根据任务状态更新进度
-        if (data.total > 0 && data.current < data.total) {
-          // 转换阶段
-          progressText = `正在转换第 ${data.current} / ${data.total} 个文件`;
-          progressValue = 20 + Math.round((data.current / data.total) * 40); // 20% - 60%
-        } else if (data.convert_done && !data.merge_done) {
-          // 合并阶段
-          progressText = '正在合并PDF文件...';
-          progressValue = 70;
-        } else if (data.merge_done && !data.package_done) {
-          // 打包阶段
-          progressText = '正在生成完整压缩包...';
-          progressValue = 85;
-        } else if (data.done) {
-          // 全部完成
-          progressText = '处理完成，可以下载了！';
-          progressValue = 100;
-        }
-        
-        setProgress(progressValue);
-        setProgressText(progressText);
-        
-        // 只有在真正完成时才显示下载按钮
-        if (data.done) {
-          setTimeout(() => setMergeDone(true), 1000);
-          clearInterval(pollingRef.current!);
-          setPolling(false);
-        }
-        
-      } catch (e) {
-        setErrorCount(cnt => {
-          if (cnt >= 2) {
-            setProgressText('后台连接中断，请检查网络或刷新页面重试');
-            clearInterval(pollingRef.current!);
-            setPolling(false);
-          } else {
-            setProgressText('网络异常，正在重试...');
+  useEffect(() => {
+    if (polling && taskId) {
+      pollingRef.current = setInterval(async () => {
+        try {
+          // 使用Next.js API代理，避免混合内容错误
+          const resp = await fetch(`/api/progress/${taskId}`);
+          if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
           }
-          return cnt + 1;
-        });
-      }
-    }, 2000); // 改为2秒轮询一次，减少服务器压力
-  };
+          const data = await resp.json();
+          
+          addLog(`进度查询: ${JSON.stringify(data)}`);
+          
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          setProgress(data.progress || 0);
+          setProgressText(data.message || '');
+          
+          // 根据进度状态更新UI
+          if (data.status === 'completed') {
+            setPolling(false);
+            setMergeDone(true);
+            addLog('✅ 所有任务完成！');
+          } else if (data.status === 'error') {
+            throw new Error(data.message || '处理失败');
+          }
+        } catch (error) {
+          console.error('轮询进度时出错:', error);
+          setErrorCount(prev => prev + 1);
+          addLog(`❌ 进度查询错误: ${error}`);
+          
+          // 连续错误超过5次停止轮询
+          if (errorCount >= 4) {
+            setPolling(false);
+            setMessage("进度查询失败次数过多，已停止轮询");
+            addLog('⚠️ 进度查询失败次数过多，已停止轮询');
+          }
+        }
+      }, 2000); // 2秒轮询一次
+      
+      return () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+        }
+      };
+    }
+  }, [polling, taskId, errorCount, addLog]);
 
   // 真正生成证书的逻辑，原 handleSubmit 的 try-catch 部分
   const handleConfirmGenerate = async () => {
@@ -233,25 +223,29 @@ export default function NewProjectPage() {
       const data = await response.json()
       
       // 解析 taskId
-      let taskId = data.taskId;
-      if (!taskId) {
+      let currentTaskId = data.taskId;
+      if (!currentTaskId) {
         // 尝试从 docxZipUrl 或 pdfUrl 中解析
         const match = (data.docxZipUrl || data.pdfUrl || '').match(/download\/(.*?)\//);
-        if (match) taskId = match[1];
+        if (match) currentTaskId = match[1];
       }
       
-      setTaskId(taskId);
+      setTaskId(currentTaskId);
       setDownloadUrl(data.docxZipUrl)
       setPdfUrl(data.pdfUrl)
       setCompleteZipUrl(data.completeZipUrl)
       setZipFileName(data.zipFileName || '证书包.zip')
       
       // 启动进度轮询
-      if (taskId) {
+      if (currentTaskId) {
         setProgress(15)
         setProgressText('证书已生成，正在启动后台处理...')
         // 稍微延迟启动轮询，让后台任务有时间初始化
-        setTimeout(() => pollProgress(taskId), 1000);
+        setTimeout(() => {
+          setPolling(true);
+          setErrorCount(0);
+          addLog('开始轮询任务进度...');
+        }, 1000);
       } else {
         setProgressText('无法获取任务进度，请联系管理员')
         setProgress(0)
@@ -288,6 +282,7 @@ export default function NewProjectPage() {
               <Select
                 inputId="alert_factory"
                 name="alert_factory"
+                instanceId="company-select"
                 value={selectedCompanyOption}
                 onChange={handleCompanyChange}
                 options={companies.map(c => ({ label: c.fullname, value: c.fullname }))}

@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
     // 2. 上传所有 docx 到 Windows 服务器
-    const winApi = 'http://139.196.115.44:5000';
+    const winApi = process.env.WINDOWS_API_URL || 'http://139.196.115.44:5000';
     const nodeForm = new FormData();
     docxBuffers.forEach(doc => {
       nodeForm.append('files', doc.buffer, { filename: doc.name });
