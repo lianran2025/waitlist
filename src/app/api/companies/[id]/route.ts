@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+// import { prisma } from '@/lib/prisma'
+import { companiesJson } from '@/lib/companies-json'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -12,7 +13,7 @@ export async function PUT(
     const body = await request.json()
     const { shortName, fullName, products, alarm } = body
 
-    const company = await prisma.company.update({
+    const company = companiesJson.update({
       where: {
         id: params.id
       },
@@ -39,7 +40,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const company = await prisma.company.delete({
+    const company = companiesJson.delete({
       where: {
         id: params.id,
       },

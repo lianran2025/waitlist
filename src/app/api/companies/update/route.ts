@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+// import { prisma } from '@/lib/prisma'
+import { companiesJson } from '@/lib/companies-json'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
     const { name, fullname, list, alarm } = body
 
     // 查找是否存在相同全名的公司
-    const existingCompany = await prisma.company.findFirst({
+    const existingCompany = companiesJson.findFirst({
       where: {
         fullName: fullname
       }
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 
     if (existingCompany) {
       // 如果公司存在，更新产品列表
-      const updatedCompany = await prisma.company.update({
+      const updatedCompany = companiesJson.update({
         where: {
           id: existingCompany.id
         },
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
       return response
     } else {
       // 如果公司不存在，创建新公司
-      const newCompany = await prisma.company.create({
+      const newCompany = companiesJson.create({
         data: {
           shortName: name,
           fullName: fullname,

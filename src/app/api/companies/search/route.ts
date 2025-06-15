@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+// import { prisma } from '@/lib/db'
+import { companiesJson } from '@/lib/companies-json'
 
 export async function GET(req: Request) {
   try {
@@ -10,7 +11,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ company: null })
     }
 
-    const company = await prisma.company.findFirst({
+    const company = companiesJson.findFirst({
       where: {
         OR: [
           { shortName: { contains: term } },

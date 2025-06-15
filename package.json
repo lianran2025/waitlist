@@ -21,6 +21,7 @@
     "docxtemplater": "^3.63.2",
     "jszip": "^3.10.1",
     "mammoth": "^1.9.1",
+    "nanoid": "^5.1.5",
     "next": "14.1.0",
     "pizzip": "^3.2.0",
     "react": "^18",

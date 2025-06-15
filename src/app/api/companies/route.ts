@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+// import { prisma } from '@/lib/prisma'
+import { companiesJson } from '@/lib/companies-json'
 
 export async function GET() {
   try {
-    const companies = await prisma.company.findMany({
+    const companies = companiesJson.findMany({
       orderBy: {
         createdAt: 'desc'
       }
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { shortName, fullName, products, alarm } = body
 
-    const company = await prisma.company.create({
+    const company = companiesJson.create({
       data: {
         shortName,
         fullName,
