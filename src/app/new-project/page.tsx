@@ -29,6 +29,7 @@ export default function NewProjectPage() {
   const [mergeDone, setMergeDone] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
+  const [taskCompleted, setTaskCompleted] = useState(false); // 添加任务完成标记
 
   // 添加日志函数
   const addLog = (message: string) => {
@@ -145,7 +146,7 @@ export default function NewProjectPage() {
 
   // 轮询进度
   useEffect(() => {
-    if (polling && taskId) {
+    if (polling && taskId && !taskCompleted) {
       pollingRef.current = setInterval(async () => {
         try {
           // 使用Next.js API代理，避免混合内容错误
@@ -155,33 +156,113 @@ export default function NewProjectPage() {
           }
           const data = await resp.json();
           
-          addLog(`进度查询: ${JSON.stringify(data)}`);
+          // 添加前端调试日志
+          console.log(`[前端轮询] TaskId: ${taskId}`);
+          console.log(`[前端轮询] 收到数据:`, data);
+          console.log(`[前端轮询] 进度: ${data.progress}%, 状态: ${data.status}, 消息: ${data.message}`);
+          
+          // 重置错误计数
+          setErrorCount(0);
+          
+          // 同步后台日志
+          if (data.raw && data.raw.logs && Array.isArray(data.raw.logs)) {
+            const backendLogs = data.raw.logs.map((log: string) => {
+              // 为后台日志添加前缀以区分
+              return log.includes('[') ? log : `[后台] ${log}`;
+            });
+            setLogs(prev => {
+              // 去重，避免日志重复
+              const combined = [...prev, ...backendLogs];
+              return [...new Set(combined)];
+            });
+          }
+          
+          addLog(`📊 进度: ${data.progress}% - ${data.message}`);
           
           if (data.error) {
             throw new Error(data.error);
           }
           
+          // 更新进度信息
           setProgress(data.progress || 0);
           setProgressText(data.message || '');
           
           // 根据进度状态更新UI
           if (data.status === 'completed') {
+            console.log(`[前端轮询] 检测到完成状态，停止轮询`);
             setPolling(false);
+            setTaskCompleted(true); // 标记任务已完成
             setMergeDone(true);
-            addLog('✅ 所有任务完成！');
+            addLog('✅ 所有任务完成！可以下载了！');
+            
+            // 立即清理轮询定时器
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+            
+            // 设置下载链接（使用正确的URL格式）
+            const baseUrl = 'http://139.196.115.44:5000/download';
+            
+            // 从日志中提取文件名
+            let zipFileName = '证书包.zip';
+            if (data.raw && data.raw.logs) {
+              const zipLog = data.raw.logs.find((log: string) => log.includes('完整压缩包生成成功:'));
+              if (zipLog) {
+                const match = zipLog.match(/complete\\(.+\.zip)/);
+                if (match) {
+                  const fullFileName = match[1].split('\\').pop();
+                  if (fullFileName) {
+                    // 提取公司名称和日期部分作为文件名
+                    const nameMatch = fullFileName.match(/_(.+)\.zip$/);
+                    if (nameMatch) {
+                      zipFileName = nameMatch[1] + '.zip';
+                    }
+                  }
+                }
+              }
+            }
+            
+            setCompleteZipUrl(`${baseUrl}/${taskId}/complete?filename=${encodeURIComponent(zipFileName)}`);
+            setPdfUrl(`${baseUrl}/${taskId}/merged`);
+            setDownloadUrl(`${baseUrl}/${taskId}/docx`);
+            
+            // 设置显示的文件名
+            setZipFileName(zipFileName);
           } else if (data.status === 'error') {
             throw new Error(data.message || '处理失败');
+          } else {
+            console.log(`[前端轮询] 继续轮询，当前状态: ${data.status}`);
           }
         } catch (error) {
           console.error('轮询进度时出错:', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          
+          // 区分网络错误和其他错误
+          const isNetworkError = errorMessage.includes('fetch failed') || 
+                                errorMessage.includes('Connect Timeout') || 
+                                errorMessage.includes('HTTP 5');
+          
+          if (isNetworkError) {
+            console.log(`[前端轮询] 网络连接问题，继续重试...`);
+            addLog(`⚠️ 网络连接问题，正在重试...`);
+          } else {
+            addLog(`❌ 进度查询错误: ${errorMessage}`);
+          }
+          
           setErrorCount(prev => prev + 1);
-          addLog(`❌ 进度查询错误: ${error}`);
           
           // 连续错误超过5次停止轮询
           if (errorCount >= 4) {
             setPolling(false);
             setMessage("进度查询失败次数过多，已停止轮询");
             addLog('⚠️ 进度查询失败次数过多，已停止轮询');
+            
+            // 清理轮询定时器
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
           }
         }
       }, 2000); // 2秒轮询一次
@@ -189,10 +270,11 @@ export default function NewProjectPage() {
       return () => {
         if (pollingRef.current) {
           clearInterval(pollingRef.current);
+          pollingRef.current = null;
         }
       };
     }
-  }, [polling, taskId, errorCount, addLog]);
+  }, [polling, taskId, taskCompleted, errorCount, addLog]);
 
   // 真正生成证书的逻辑，原 handleSubmit 的 try-catch 部分
   const handleConfirmGenerate = async () => {
@@ -205,6 +287,8 @@ export default function NewProjectPage() {
     setZipFileName("")
     setProgress(10)
     setProgressText('正在生成证书并上传到服务器...')
+    setTaskCompleted(false) // 重置任务完成状态
+    setMergeDone(false) // 重置合并完成状态
     
     try {
       const formData = new FormData()
@@ -452,31 +536,20 @@ export default function NewProjectPage() {
                 {progressText}
               </div>
             )}
-            {polling && (
+            {polling && !taskCompleted && (
               <div className="mt-2 flex items-center justify-center text-xs text-blue-600">
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"></div>
-                实时监控中...
+                实时监控中... (错误次数: {errorCount}/5)
+              </div>
+            )}
+            {polling && !taskCompleted && errorCount > 0 && errorCount < 5 && (
+              <div className="mt-2 text-xs text-amber-600 text-center">
+                ⚠️ 网络连接不稳定，正在重试...
               </div>
             )}
           </div>
         )}
-        {/* 处理日志展示区 - 只在轮询时显示 */}
-        {polling && logs.length > 0 && (
-          <div className="mt-4">
-            <details className="bg-gray-50 rounded-lg">
-              <summary className="px-3 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 rounded-lg">
-                查看处理详情 ({logs.length} 条记录)
-              </summary>
-              <div className="px-3 pb-3 max-h-40 overflow-y-auto text-xs font-mono text-gray-700 space-y-1">
-                {logs.slice(-10).map((log, idx) => (
-                  <div key={idx} className="py-1 border-b border-gray-200 last:border-b-0">
-                    {log}
-                  </div>
-                ))}
-              </div>
-            </details>
-          </div>
-        )}
+
         {/* 下载区域 - 只在真正完成时显示 */}
         {mergeDone && completeZipUrl && (
           <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200 text-center">
