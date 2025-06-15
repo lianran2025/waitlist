@@ -30,6 +30,7 @@ export default function NewProjectPage() {
   const [errorCount, setErrorCount] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [taskCompleted, setTaskCompleted] = useState(false); // 添加任务完成标记
+  const [downloading, setDownloading] = useState(false); // 添加下载状态标记
 
   // 添加日志函数
   const addLog = (message: string) => {
@@ -251,7 +252,15 @@ export default function NewProjectPage() {
             
             console.log(`[文件名提取] 最终文件名: ${zipFileName}`);
             
-            setCompleteZipUrl(`${baseUrl}/${taskId}/complete?filename=${encodeURIComponent(zipFileName)}`);
+            // 生成下载URL，确保正确编码
+            const encodedFileName = encodeURIComponent(zipFileName);
+            const completeUrl = `${baseUrl}/${taskId}/complete?filename=${encodedFileName}`;
+            
+            console.log(`[URL生成] 原始文件名: ${zipFileName}`);
+            console.log(`[URL生成] 编码后文件名: ${encodedFileName}`);
+            console.log(`[URL生成] 完整下载URL: ${completeUrl}`);
+            
+            setCompleteZipUrl(completeUrl);
             setPdfUrl(`${baseUrl}/${taskId}/merged`);
             setDownloadUrl(`${baseUrl}/${taskId}/docx`);
             
@@ -592,17 +601,86 @@ export default function NewProjectPage() {
             <p className="text-sm text-green-700 mb-4">
               所有证书已生成完成，包含Word文档和PDF文件
             </p>
-            <a 
-              href={completeZipUrl} 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md"
+            <button
+              onClick={async () => {
+                if (downloading) {
+                  console.log(`[下载] 下载正在进行中，忽略重复点击`);
+                  return;
+                }
+                
+                try {
+                  setDownloading(true);
+                  console.log(`[下载] 开始下载: ${completeZipUrl}`);
+                  console.log(`[下载] 文件名: ${zipFileName}`);
+                  
+                  // 方法1：尝试使用fetch下载
+                  try {
+                    const response = await fetch(completeZipUrl);
+                    if (response.ok) {
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = zipFileName || '证书包.zip';
+                      link.style.display = 'none';
+                      
+                      document.body.appendChild(link);
+                      link.click();
+                      
+                      setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      }, 100);
+                      
+                      console.log(`[下载] Fetch下载成功`);
+                    } else {
+                      throw new Error(`HTTP ${response.status}`);
+                    }
+                  } catch (fetchError) {
+                    console.log(`[下载] Fetch下载失败，尝试直接链接下载:`, fetchError);
+                    
+                    // 方法2：回退到直接链接下载
+                    const link = document.createElement('a');
+                    link.href = completeZipUrl;
+                    link.download = zipFileName || '证书包.zip';
+                    link.style.display = 'none';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    setTimeout(() => {
+                      document.body.removeChild(link);
+                    }, 100);
+                    
+                    console.log(`[下载] 直接链接下载已触发`);
+                  }
+                } catch (error) {
+                  console.error('[下载] 下载失败:', error);
+                  // 最后的回退方案：直接打开链接
+                  window.open(completeZipUrl, '_blank');
+                } finally {
+                  // 3秒后重置下载状态，防止卡住
+                  setTimeout(() => {
+                    setDownloading(false);
+                  }, 3000);
+                }
+              }}
+              disabled={downloading}
+              className={`inline-flex items-center px-6 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md ${
+                downloading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              下载完整证书包
-            </a>
+              {downloading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              ) : (
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              {downloading ? '正在下载...' : '下载完整证书包'}
+            </button>
             <p className="mt-2 text-xs text-green-600">
               文件名：{zipFileName}
             </p>
