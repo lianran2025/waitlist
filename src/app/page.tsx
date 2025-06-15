@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { DocumentTextIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import LogoutButton from '@/components/LogoutButton';
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4 relative">
+      <LogoutButton />
       <h1 className="text-4xl md:text-5xl font-bold mb-8 text-gray-800">功能选择</h1>
       <div className="flex flex-col md:flex-row gap-4 md:gap-8 w-full max-w-3xl">
         <Link href="/new-project" className="block w-full max-w-xs mx-auto md:mx-0 p-6 md:p-8 rounded-xl shadow-lg bg-white hover:bg-blue-50 transition border border-gray-200 text-center">
