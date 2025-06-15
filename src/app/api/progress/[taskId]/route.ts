@@ -71,15 +71,14 @@ export async function GET(
     console.log(`  - results: ${completedFiles}/${expectedFiles}`)
     console.log(`  - has_results: ${hasResults}`)
 
-    // 智能判断任务是否真正完成
-    // 如果Windows服务器状态标志有问题，我们通过其他指标来判断
+    // 严格判断任务是否真正完成
+    // 只有当所有步骤都完成时才认为任务完成
     const isReallyComplete = (
-      explicitDone || 
-      (convertDone && mergeDone && packageDone) ||
-      // 如果有结果文件且数量匹配，认为完成
-      (hasResults && completedFiles >= expectedFiles && expectedFiles > 0) ||
-      // 如果current等于total且都大于0，也认为至少转换完成
-      (data.current > 0 && data.current >= data.total && data.total > 0)
+      explicitDone && 
+      convertDone && 
+      mergeDone && 
+      packageDone &&
+      data.complete_zip_path // 必须有完整压缩包路径
     )
 
     console.log(`[API代理] 完成状态判断: ${isReallyComplete}`)
@@ -139,7 +138,9 @@ export async function GET(
         merge_done: mergeDone,
         package_done: packageDone,
         done: allDone,
-        logs: data.logs || []
+        logs: data.logs || [],
+        complete_zip_path: data.complete_zip_path || '', // 保留完整压缩包路径
+        folder_name: data.folder_name || '' // 保留文件夹名称
       }
     }
     
