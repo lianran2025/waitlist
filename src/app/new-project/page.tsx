@@ -204,16 +204,42 @@ export default function NewProjectPage() {
             // 设置下载链接（使用正确的URL格式）
             const baseUrl = 'http://139.196.115.44:5000/download';
             
-            // 从日志中提取文件名
+            // 从后台数据中提取文件名
             let zipFileName = '证书包.zip';
-            if (data.raw && data.raw.logs) {
+            
+            // 方法1：从complete_zip_path字段提取
+            if (data.raw && data.raw.complete_zip_path) {
+              const fullPath = data.raw.complete_zip_path;
+              console.log(`[文件名提取] complete_zip_path: ${fullPath}`);
+              
+              // 提取文件名部分 (去掉路径前缀)
+              const fileName = fullPath.split('\\').pop() || fullPath.split('/').pop();
+              if (fileName) {
+                console.log(`[文件名提取] 原始文件名: ${fileName}`);
+                
+                // 从完整文件名中提取公司名称和日期部分
+                // 格式: taskId_公司名称日期.zip -> 公司名称日期.zip
+                const nameMatch = fileName.match(/^[a-f0-9-]+_(.+)\.zip$/i);
+                if (nameMatch) {
+                  zipFileName = nameMatch[1] + '.zip';
+                  console.log(`[文件名提取] 提取的显示文件名: ${zipFileName}`);
+                } else {
+                  // 如果正则匹配失败，直接使用文件名
+                  zipFileName = fileName;
+                  console.log(`[文件名提取] 使用原始文件名: ${zipFileName}`);
+                }
+              }
+            }
+            
+            // 方法2：从日志中提取（备用方案）
+            else if (data.raw && data.raw.logs) {
               const zipLog = data.raw.logs.find((log: string) => log.includes('完整压缩包生成成功:'));
               if (zipLog) {
+                console.log(`[文件名提取] 从日志提取: ${zipLog}`);
                 const match = zipLog.match(/complete\\(.+\.zip)/);
                 if (match) {
                   const fullFileName = match[1].split('\\').pop();
                   if (fullFileName) {
-                    // 提取公司名称和日期部分作为文件名
                     const nameMatch = fullFileName.match(/_(.+)\.zip$/);
                     if (nameMatch) {
                       zipFileName = nameMatch[1] + '.zip';
@@ -222,6 +248,8 @@ export default function NewProjectPage() {
                 }
               }
             }
+            
+            console.log(`[文件名提取] 最终文件名: ${zipFileName}`);
             
             setCompleteZipUrl(`${baseUrl}/${taskId}/complete?filename=${encodeURIComponent(zipFileName)}`);
             setPdfUrl(`${baseUrl}/${taskId}/merged`);
