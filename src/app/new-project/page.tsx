@@ -1,8 +1,8 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import Select from 'react-select'
+import DatePicker from 'react-datepicker'
 import { Fragment } from "react"
+import "react-datepicker/dist/react-datepicker.css"
 
 export default function NewProjectPage() {
   const [loading, setLoading] = useState(false)
@@ -21,6 +21,10 @@ export default function NewProjectPage() {
   const [companyError, setCompanyError] = useState("")
   const [models, setModels] = useState<string[]>([])
   const [selectedModel, setSelectedModel] = useState("")
+  const [selectedModelOption, setSelectedModelOption] = useState<any>(null)
+  const [selectedGas, setSelectedGas] = useState("甲烷")
+  const [selectedGasOption, setSelectedGasOption] = useState<any>({ label: "甲烷", value: "甲烷" })
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmData, setConfirmData] = useState<any>(null)
   const [errorModal, setErrorModal] = useState("")
@@ -60,6 +64,7 @@ export default function NewProjectPage() {
       setSelectedCompanyOption(null)
       setModels([])
       setSelectedModel("")
+      setSelectedModelOption(null)
       return
     }
     const company = companies.find(c => c.fullname === option.value)
@@ -67,10 +72,27 @@ export default function NewProjectPage() {
     setSelectedCompanyOption(option)
     setModels(company.list)
     setSelectedModel(company.list[0] || "")
+    setSelectedModelOption(company.list[0] ? { label: company.list[0], value: company.list[0] } : null)
   }
 
-  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedModel(e.target.value)
+  const handleModelChange = (option: any) => {
+    if (!option) {
+      setSelectedModel("")
+      setSelectedModelOption(null)
+      return
+    }
+    setSelectedModel(option.value)
+    setSelectedModelOption(option)
+  }
+
+  const handleGasChange = (option: any) => {
+    if (!option) {
+      setSelectedGas("甲烷")
+      setSelectedGasOption({ label: "甲烷", value: "甲烷" })
+      return
+    }
+    setSelectedGas(option.value)
+    setSelectedGasOption(option)
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -88,17 +110,23 @@ export default function NewProjectPage() {
       return
     }
 
-    // 日期格式化处理
-    const rawDate = formData.get("date") as string
-    if (rawDate) {
-      // 兼容 '2025-05-29' 或 '2025/05/29'，转为 '20250529'
-      const formattedDate = rawDate.replace(/[-/]/g, "")
-      formData.set("date", formattedDate)
+    // 日期格式化处理 - 使用本地时间避免时区问题
+    if (!selectedDate) {
+      setErrorModal("请选择检测日期")
+      setLoading(false)
+      return
     }
+    const year = selectedDate.getFullYear()
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+    const day = String(selectedDate.getDate()).padStart(2, '0')
+    const formattedDate = `${year}${month}${day}`
+    console.log(`[日期格式化] 原始日期: ${selectedDate}, 格式化后: ${formattedDate}`)
+    formData.set("date", formattedDate)
 
-    // 新增：将 alert_factory 和 alert_type 加入表单
+    // 新增：将 alert_factory、alert_type 和 gas 加入表单
     formData.set("alert_factory", selectedCompany)
     formData.set("alert_type", selectedModel)
+    formData.set("gas", selectedGas)
 
     // 修改：分布区域可选，留空时按单个空区域处理
     const sectionsRaw = (formData.get("sections") as string || "").trim()
@@ -140,6 +168,12 @@ export default function NewProjectPage() {
     formData.forEach((v, k) => { dataObj[k] = v })
     dataObj["alert_factory"] = selectedCompany
     dataObj["alert_type"] = selectedModel
+    dataObj["gas"] = selectedGas
+    dataObj["date"] = selectedDate.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit', 
+      day: '2-digit'
+    })
     setConfirmData(dataObj)
     setShowConfirmModal(true)
     setLoading(false)
@@ -329,7 +363,19 @@ export default function NewProjectPage() {
     
     try {
       const formData = new FormData()
-      Object.entries(confirmData).forEach(([k, v]) => formData.append(k, v as string))
+      Object.entries(confirmData).forEach(([k, v]) => {
+        if (k === 'date') {
+          // 重新格式化日期为8位数字字符串
+          const year = selectedDate.getFullYear()
+          const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+          const day = String(selectedDate.getDate()).padStart(2, '0')
+          const formattedDate = `${year}${month}${day}`
+          console.log(`[确认生成] 重新格式化日期: ${formattedDate}`)
+          formData.append(k, formattedDate)
+        } else {
+          formData.append(k, v as string)
+        }
+      })
       
       const response = await fetch("/api/generate-certificates", {
         method: "POST",
@@ -385,163 +431,278 @@ export default function NewProjectPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl">
         <h2 className="text-3xl font-bold mb-8 text-gray-800">证书生成工具</h2>
-        <form id="generateForm" className="space-y-8" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-2">委托单位名称</label>
-              <input 
-                type="text" 
-                id="company_name" 
-                name="company_name" 
-                required 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="请输入委托单位名称" 
-              />
+        <form id="generateForm" className="space-y-6" onSubmit={handleSubmit}>
+          {/* 基本信息组 */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">基本信息</h3>
             </div>
-            <div>
-              <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">公司名称</label>
-              <Select
-                inputId="alert_factory"
-                name="alert_factory"
-                instanceId="company-select"
-                value={selectedCompanyOption}
-                onChange={handleCompanyChange}
-                options={companies.map(c => ({ label: c.fullname, value: c.fullname }))}
-                classNamePrefix="react-select"
-                placeholder="请输入或搜索公司名称..."
-                isSearchable
-                isClearable
-                styles={{
-                  control: (base, state) => ({ ...base, minHeight: '48px', borderRadius: '0.5rem', borderColor: companyError ? '#ef4444' : '#d1d5db', boxShadow: 'none' }),
-                  menu: (base) => ({ ...base, zIndex: 20 }),
-                }}
-              />
-              <p className="mt-2 text-sm text-gray-500">可输入关键字快速搜索公司</p>
-              {companyError && <p className="mt-1 text-sm text-red-500">{companyError}</p>}
-            </div>
-            <div>
-              <label htmlFor="alert_type" className="block text-sm font-medium text-gray-700 mb-2">品牌型号</label>
-              <select 
-                id="alert_type" 
-                name="alert_type" 
-                value={selectedModel} 
-                onChange={handleModelChange} 
-                required 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              >
-                {models.map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="all_nums" className="block text-sm font-medium text-gray-700 mb-2">探头总数量</label>
-              <input 
-                type="number" 
-                id="all_nums" 
-                name="all_nums" 
-                required 
-                min={1} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="请输入探头总数" 
-              />
-            </div>
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">检测日期</label>
-              <input 
-                type="date" 
-                id="date" 
-                name="date" 
-                required 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                defaultValue={new Date().toISOString().split('T')[0]} 
-              />
-            </div>
-            <div>
-              <label htmlFor="start_num" className="block text-sm font-medium text-gray-700 mb-2">探头起始编号</label>
-              <input 
-                type="number" 
-                id="start_num" 
-                name="start_num" 
-                required 
-                min={1} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="请输入起始编号" 
-                defaultValue="1" 
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-2">委托单位名称</label>
+                <input 
+                  type="text" 
+                  id="company_name" 
+                  name="company_name" 
+                  required 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                  placeholder="请输入委托单位名称" 
+                />
+              </div>
+                             <div>
+                 <label htmlFor="gas" className="block text-sm font-medium text-gray-700 mb-2">检测气体</label>
+                 <Select
+                   inputId="gas"
+                   name="gas"
+                   instanceId="gas-select"
+                   value={selectedGasOption}
+                   onChange={handleGasChange}
+                   options={[
+                     { label: "甲烷", value: "甲烷" },
+                     { label: "丙烷", value: "丙烷" }
+                   ]}
+                   classNamePrefix="react-select"
+                   placeholder="请选择检测气体..."
+                   isSearchable={false}
+                   styles={{
+                     control: (base) => ({ 
+                       ...base, 
+                       minHeight: '48px', 
+                       borderRadius: '0.5rem', 
+                       borderColor: '#d1d5db', 
+                       boxShadow: 'none',
+                       backgroundColor: 'white'
+                     }),
+                     menu: (base) => ({ ...base, zIndex: 20 }),
+                   }}
+                 />
+               </div>
+                             <div>
+                 <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">检测日期</label>
+                 <DatePicker
+                   id="date"
+                   selected={selectedDate}
+                   onChange={(date: Date | null) => date && setSelectedDate(date)}
+                   dateFormat="yyyy年MM月dd日"
+                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white cursor-pointer"
+                   wrapperClassName="w-full"
+                   calendarClassName="shadow-lg border-0 rounded-lg"
+                   dayClassName={(date) => 
+                     "hover:bg-blue-500 hover:text-white rounded-full w-8 h-8 flex items-center justify-center mx-auto transition-colors cursor-pointer"
+                   }
+                   monthClassName={() => "hover:bg-blue-500 hover:text-white rounded px-2 py-1 transition-colors cursor-pointer"}
+                   yearClassName={() => "hover:bg-blue-500 hover:text-white rounded px-2 py-1 transition-colors cursor-pointer"}
+                   previousMonthButtonLabel="‹"
+                   nextMonthButtonLabel="›"
+                   showPopperArrow={false}
+                   placeholderText="请选择日期"
+                 />
+               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-2">温度（°C）</label>
-              <input 
-                type="number" 
-                id="temperature" 
-                name="temperature" 
-                step="0.1" 
-                required 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="如: 20.0" 
-                defaultValue="20.0" 
-              />
+          {/* 设备信息组 */}
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">设备信息</h3>
             </div>
-            <div>
-              <label htmlFor="humidity" className="block text-sm font-medium text-gray-700 mb-2">湿度（%）</label>
-              <input 
-                type="number" 
-                id="humidity" 
-                name="humidity" 
-                required 
-                min={0} 
-                max={100} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="如: 50" 
-                defaultValue="50" 
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">公司名称</label>
+                                 <Select
+                   inputId="alert_factory"
+                   name="alert_factory"
+                   instanceId="company-select"
+                   value={selectedCompanyOption}
+                   onChange={handleCompanyChange}
+                   options={companies.map(c => ({ label: c.fullname, value: c.fullname }))}
+                   classNamePrefix="react-select"
+                   placeholder="请输入或搜索公司名称..."
+                   isSearchable
+                   isClearable
+                   styles={{
+                     control: (base, state) => ({ 
+                       ...base, 
+                       minHeight: '48px', 
+                       borderRadius: '0.5rem', 
+                       borderColor: companyError ? '#ef4444' : '#d1d5db', 
+                       boxShadow: 'none',
+                       backgroundColor: 'white'
+                     }),
+                     menu: (base) => ({ ...base, zIndex: 20 }),
+                   }}
+                 />
+                 {companyError && <p className="mt-1 text-sm text-red-500">{companyError}</p>}
+              </div>
+                             <div>
+                 <label htmlFor="alert_type" className="block text-sm font-medium text-gray-700 mb-2">品牌型号</label>
+                 <Select
+                   inputId="alert_type"
+                   name="alert_type"
+                   instanceId="model-select"
+                   value={selectedModelOption}
+                   onChange={handleModelChange}
+                   options={models.map(m => ({ label: m, value: m }))}
+                   classNamePrefix="react-select"
+                   placeholder="请选择品牌型号..."
+                   isSearchable={true}
+                   styles={{
+                     control: (base) => ({ 
+                       ...base, 
+                       minHeight: '48px', 
+                       borderRadius: '0.5rem', 
+                       borderColor: '#d1d5db', 
+                       boxShadow: 'none',
+                       backgroundColor: 'white'
+                     }),
+                     menu: (base) => ({ ...base, zIndex: 20 }),
+                   }}
+                 />
+               </div>
             </div>
           </div>
 
-          <div className="space-y-8">
-            <div>
-              <label htmlFor="sections" className="block text-sm font-medium text-gray-700 mb-2">
-                探头分布区域 <span className="text-gray-500 text-sm">(可选)</span>
-              </label>
-              <input 
-                type="text" 
-                id="sections" 
-                name="sections" 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="例如：厨房 大厅 或 厨房,大厅 (留空则不按区域分布)" 
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                留空时将所有探头视为一个整体，不按区域分布
-              </p>
+          {/* 探头配置组 */}
+          <div className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">探头配置</h3>
             </div>
-            <div>
-              <label htmlFor="sections_num" className="block text-sm font-medium text-gray-700 mb-2">各区域探头数量</label>
-              <input 
-                type="text" 
-                id="sections_num" 
-                name="sections_num" 
-                required 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                placeholder="例如：4 6 或 4,6 (区域为空时只填总数量)" 
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                如果区域为空，只需填写总数量；如果有区域，需要与区域数量对应
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="all_nums" className="block text-sm font-medium text-gray-700 mb-2">探头总数量</label>
+                <input 
+                  type="number" 
+                  id="all_nums" 
+                  name="all_nums" 
+                  required 
+                  min={1} 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                  placeholder="请输入探头总数" 
+                />
+              </div>
+              <div>
+                <label htmlFor="start_num" className="block text-sm font-medium text-gray-700 mb-2">探头起始编号</label>
+                <input 
+                  type="number" 
+                  id="start_num" 
+                  name="start_num" 
+                  required 
+                  min={1} 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                  placeholder="请输入起始编号" 
+                  defaultValue="1" 
+                />
+              </div>
             </div>
-            <div>
-              <label htmlFor="problem_nums" className="block text-sm font-medium text-gray-700 mb-2">故障探头编号（可选）</label>
-              <input
-                type="text"
-                id="problem_nums"
-                name="problem_nums"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="如 1-3 5 7-8"
-              />
-              <p className="mt-2 text-sm text-gray-500">支持区间和空格分隔，如 1-3 5 7-8</p>
+          </div>
+
+          {/* 分布配置组 */}
+          <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">分布配置</h3>
+            </div>
+                         <div className="space-y-6">
+               <div>
+                 <label htmlFor="sections" className="block text-sm font-medium text-gray-700 mb-2">
+                   探头分布区域 <span className="text-gray-500 text-sm">(可选)</span>
+                 </label>
+                 <input 
+                   type="text" 
+                   id="sections" 
+                   name="sections" 
+                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                 />
+                 <p className="mt-2 text-sm text-gray-500">
+                   留空时将所有探头视为一个整体，不按区域分布
+                 </p>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div>
+                   <label htmlFor="sections_num" className="block text-sm font-medium text-gray-700 mb-2">各区域探头数量</label>
+                   <input 
+                     type="text" 
+                     id="sections_num" 
+                     name="sections_num" 
+                     required 
+                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                   />
+                   <p className="mt-2 text-sm text-gray-500">
+                     如果区域为空，只需填写总数量；如果有区域，需要与区域数量对应
+                   </p>
+                 </div>
+                 <div>
+                   <label htmlFor="problem_nums" className="block text-sm font-medium text-gray-700 mb-2">故障探头编号（可选）</label>
+                   <input
+                     type="text"
+                     id="problem_nums"
+                     name="problem_nums"
+                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                   />
+                   <p className="mt-2 text-sm text-gray-500">支持区间和空格分隔，如 1-3 5 7-8</p>
+                 </div>
+               </div>
+             </div>
+          </div>
+
+          {/* 环境参数组 */}
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">环境参数</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-2">温度（°C）</label>
+                <input 
+                  type="number" 
+                  id="temperature" 
+                  name="temperature" 
+                  step="0.1" 
+                  required 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                  placeholder="如: 20.0" 
+                  defaultValue="20.0" 
+                />
+              </div>
+              <div>
+                <label htmlFor="humidity" className="block text-sm font-medium text-gray-700 mb-2">湿度（%）</label>
+                <input 
+                  type="number" 
+                  id="humidity" 
+                  name="humidity" 
+                  required 
+                  min={0} 
+                  max={100} 
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
+                  placeholder="如: 50" 
+                  defaultValue="50" 
+                />
+              </div>
             </div>
           </div>
 
@@ -653,6 +814,7 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
     all_nums: "探头总数量",
     date: "检测日期",
     start_num: "探头起始编号",
+    gas: "检测气体",
     temperature: "温度（°C）",
     humidity: "湿度（%）",
     sections: "探头分布区域",

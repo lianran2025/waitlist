@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
     const date = formData.get('date') as string
     const temperature = formData.get('temperature') as string
     const humidity = formData.get('humidity') as string
+    
+    // 添加调试信息
+    console.log('[后端API] 收到的日期参数:', date, typeof date)
     const sectionsRaw = (formData.get('sections') as string || '').trim()
     const sections = sectionsRaw ? sectionsRaw.split(/[,，\s]+/).filter(Boolean) : ['']
     const sectionsNum = (formData.get('sections_num') as string).split(/[,，\s]+/).map(Number).filter(n => !isNaN(n))
@@ -22,9 +25,20 @@ export async function POST(req: NextRequest) {
     const alertFactory = formData.get('alert_factory') as string;
     const alertType = formData.get('alert_type') as string;
     const problemNumsRaw = formData.get('problem_nums') as string | null;
+    const gas = formData.get('gas') as string;
+
+    // 根据gas值设置gas_num
+    let gas_num: string;
+    if (gas === '甲烷') {
+      gas_num = 'GBW(E)061662';
+    } else if (gas === '丙烷') {
+      gas_num = 'GBW(E)061853';
+    } else {
+      gas_num = 'GBW(E)061662'; // 默认值
+    }
 
     // 校验
-    if (!companyName || !allNums || !date || !temperature || !humidity || !sectionsNum.length || isNaN(startNum)) {
+    if (!companyName || !allNums || !date || !temperature || !humidity || !sectionsNum.length || isNaN(startNum) || !gas) {
       return new Response(JSON.stringify({ message: '参数不完整' }), { status: 400 })
     }
     
@@ -149,6 +163,8 @@ export async function POST(req: NextRequest) {
         action_time_with_unit: isProblem ? '/' : `${Math.floor(Math.random() * (25 - 7 + 1)) + 7}s`,
         alarm_status: isProblem ? '异常' : '正常',
         gongneng: isProblem ? '异常' : '正常',
+        gas: gas,
+        gas_num: gas_num,
       };
 
       const content = new PizZip(templateBuffer);
