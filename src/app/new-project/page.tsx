@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useRef } from "react"
 import Select from 'react-select'
 import DatePicker from 'react-datepicker'
