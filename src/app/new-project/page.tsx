@@ -739,7 +739,7 @@ export default function NewProjectPage() {
             {polling && !taskCompleted && (
               <div className="mt-2 flex items-center justify-center text-xs text-blue-600">
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"></div>
-                实时监控中... (错误次数: {errorCount}/5)
+                实时监控中...
               </div>
             )}
             {polling && !taskCompleted && errorCount > 0 && errorCount < 5 && (
@@ -760,10 +760,7 @@ export default function NewProjectPage() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-lg font-medium text-green-900 mb-2">处理完成！</h3>
-            <p className="text-sm text-green-700 mb-4">
-              所有证书已生成完成，包含Word文档和PDF文件
-            </p>
+            <h3 className="text-lg font-medium text-green-900 mb-4">处理完成！</h3>
             <a
               href={completeZipUrl}
               download={zipFileName || '证书包.zip'}
@@ -778,9 +775,6 @@ export default function NewProjectPage() {
               </svg>
               下载完整证书包
             </a>
-            <p className="mt-2 text-xs text-green-600">
-              文件名：{zipFileName}
-            </p>
           </div>
         )}
         {errorModal && (

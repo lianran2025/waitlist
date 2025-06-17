@@ -77,9 +77,10 @@ export async function POST(req: NextRequest) {
 
       const formatted = `${year} 年 ${String(month + 1).padStart(2, '0')} 月 ${String(day).padStart(2, '0')} 日`;
       
-      // 计算下一年日期
+      // 计算下一年日期（下一年的前一天）
       const nextYear = new Date(date);
-      nextYear.setFullYear(year + 1);
+      nextYear.setFullYear(year + 1);  // 先加一年
+      nextYear.setDate(nextYear.getDate() - 1);  // 再减一天
       const formattedNext = `${nextYear.getFullYear()} 年 ${String(nextYear.getMonth() + 1).padStart(2, '0')} 月 ${String(nextYear.getDate()).padStart(2, '0')} 日`;
 
       return [formatted, formattedNext];
