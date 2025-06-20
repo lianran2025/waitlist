@@ -24,6 +24,119 @@ body {
 .react-datepicker {
   @apply border-0 shadow-xl rounded-xl;
   font-family: inherit;
+  z-index: 30 !important;
+}
+
+.react-datepicker-popper {
+  z-index: 30 !important;
+}
+
+.react-datepicker-wrapper {
+  position: relative;
+  z-index: 20 !important;
+}
+
+/* 确保日期选择器弹出层在正确位置 */
+.z-\[9999\] {
+  z-index: 30 !important;
+}
+
+/* 针对DatePicker的额外强制z-index */
+.react-datepicker__tab-loop {
+  z-index: 10000 !important;
+}
+
+.react-datepicker__portal {
+  z-index: 10000 !important;
+}
+
+/* 使用Portal方式渲染DatePicker到body */
+.react-datepicker-popper[data-placement^="bottom"] {
+  z-index: 10000 !important;
+  position: fixed !important;
+}
+
+.react-datepicker-popper[data-placement^="top"] {
+  z-index: 10000 !important;
+  position: fixed !important;
+}
+
+/* DatePicker容器样式 - 完全脱离堆叠上下文 */
+.datepicker-container {
+  position: relative !important;
+  z-index: 999998 !important;
+}
+
+/* DatePicker弹出层样式 */
+.super-high-z-index {
+  z-index: 30 !important;
+  position: absolute !important;
+}
+
+/* 确保所有DatePicker相关元素都有合适的z-index */
+.react-datepicker-popper {
+  z-index: 30 !important;
+  position: absolute !important;
+}
+
+.react-datepicker {
+  z-index: 30 !important;
+}
+
+.react-datepicker-wrapper {
+  z-index: 20 !important;
+  position: relative !important;
+}
+
+/* 特殊处理：确保DatePicker不受任何transform影响 */
+.datepicker-container .react-datepicker-popper {
+  position: fixed !important;
+  z-index: 999999 !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* 为包含DatePicker的表单组禁用transform动画 */
+.no-transform-for-datepicker {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* 确保基本信息模块不会有任何高亮效果 */
+.no-transform-for-datepicker:focus,
+.no-transform-for-datepicker:focus-within,
+.no-transform-for-datepicker:active,
+.no-transform-for-datepicker:hover {
+  outline: none !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+  border-color: #d1d5db !important;
+  background: linear-gradient(to right, #f9fafb, #f1f5f9) !important;
+}
+
+/* 强制重置基本信息模块的所有可能的高亮状态 */
+.no-transform-for-datepicker {
+  background: linear-gradient(to right, #f9fafb, #f1f5f9) !important;
+  border-color: #d1d5db !important;
+}
+
+/* 防止表单验证时的高亮 */
+.no-transform-for-datepicker:invalid,
+.no-transform-for-datepicker:valid {
+  background: linear-gradient(to right, #f9fafb, #f1f5f9) !important;
+  border-color: #d1d5db !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 当DatePicker容器的父元素有transform时，强制重置 */
+.datepicker-container {
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+/* 强制DatePicker弹出层脱离所有堆叠上下文 */
+.datepicker-container .react-datepicker-popper {
+  position: absolute !important;
+  z-index: 30 !important;
 }
 
 .react-datepicker__header {
@@ -88,4 +201,109 @@ body {
 
 .react-datepicker__triangle {
   display: none;
+}
+
+/* 自定义动画效果 */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.5s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.5s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease-in-out infinite;
+}
+
+/* 延迟动画 */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-150 {
+  animation-delay: 0.15s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+/* 输入框焦点特效 */
+input:focus, select:focus, textarea:focus {
+  @apply ring-2 ring-blue-500 ring-opacity-50 transform scale-[1.02] transition-all duration-200;
+}
+
+/* 3D效果增强 */
+.transform-3d {
+  transform-style: preserve-3d;
+}
+
+/* 悬停时的微妙倾斜效果 */
+.hover-tilt:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale(1.02);
 }

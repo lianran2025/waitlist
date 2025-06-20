@@ -389,15 +389,15 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex flex-col items-center justify-center p-6 relative animate-gradient-shift">
       <LogoutButton />
-      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl">
+      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl transform transition-all duration-700 animate-fade-in-up hover:shadow-2xl">
         <h2 className="text-3xl font-bold mb-8 text-gray-800">证书生成工具</h2>
         <form id="generateForm" className="space-y-6" onSubmit={handleSubmit}>
           {/* 基本信息组 */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-6 shadow-sm no-transform-for-datepicker transition-all duration-300 hover:shadow-lg animate-slide-in-left">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+              <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -440,11 +440,13 @@ export default function HomePage() {
                       boxShadow: 'none',
                       backgroundColor: 'white'
                     }),
-                    menu: (base) => ({ ...base, zIndex: 20 }),
+                    menu: (base) => ({ ...base, zIndex: 9999 }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                   }}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                 />
               </div>
-              <div>
+              <div className="relative datepicker-container">
                 <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">检测日期</label>
                 <DatePicker
                   id="date"
@@ -463,13 +465,15 @@ export default function HomePage() {
                   nextMonthButtonLabel="›"
                   showPopperArrow={false}
                   placeholderText="请选择日期"
+                  popperClassName="super-high-z-index"
+                  popperPlacement="bottom-start"
                 />
               </div>
             </div>
           </div>
 
           {/* 设备信息组 */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-right">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -501,8 +505,10 @@ export default function HomePage() {
                       boxShadow: 'none',
                       backgroundColor: 'white'
                     }),
-                    menu: (base) => ({ ...base, zIndex: 20 }),
+                    menu: (base) => ({ ...base, zIndex: 9999 }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                   }}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                 />
                 {companyError && <p className="mt-1 text-sm text-red-500">{companyError}</p>}
               </div>
@@ -527,15 +533,17 @@ export default function HomePage() {
                       boxShadow: 'none',
                       backgroundColor: 'white'
                     }),
-                    menu: (base) => ({ ...base, zIndex: 20 }),
+                    menu: (base) => ({ ...base, zIndex: 9999 }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                   }}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                 />
               </div>
             </div>
           </div>
 
           {/* 探头配置组 */}
-          <div className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-left delay-100">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -585,7 +593,7 @@ export default function HomePage() {
           </div>
 
           {/* 分布配置组 */}
-          <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-right delay-150">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -631,7 +639,7 @@ export default function HomePage() {
           </div>
 
           {/* 环境参数组 */}
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-left delay-200">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -671,13 +679,15 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="pt-4">
+          <div className="pt-4 animate-fade-in delay-300">
             <button 
               type="submit" 
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" 
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 hover:shadow-xl hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:scale-100 transform" 
               disabled={loading}
             >
-              {loading ? "生成中..." : "生成证书"}
+              <span className={`inline-block transition-transform duration-200 ${loading ? 'animate-pulse' : ''}`}>
+                {loading ? "生成中..." : "生成证书"}
+              </span>
             </button>
           </div>
         </form>
@@ -743,17 +753,17 @@ export default function HomePage() {
         )}
 
         {/* 添加指向公司列表的链接 */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="mt-8 pt-6 border-t border-gray-200 animate-fade-in delay-300">
           <div className="text-center">
             <Link 
               href="/companies" 
-              className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 rounded-lg hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform border border-gray-200 hover:border-blue-200"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               探头厂家信息列表
-            </Link>
+        </Link>
           </div>
         </div>
 
@@ -782,43 +792,128 @@ export default function HomePage() {
 }
 
 function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () => void, onConfirm: () => void }) {
-  const fieldLabels: Record<string, string> = {
-    company_name: "委托单位名称",
-    alert_factory: "公司名称",
-    alert_type: "品牌型号",
-    all_nums: "探头总数量",
-    date: "检测日期",
-    start_num: "探头起始编号",
-    gas: "检测气体",
-    temperature: "温度（°C）",
-    humidity: "湿度（%）",
-    sections: "探头分布区域",
-    sections_num: "各区域探头数量",
-    problem_nums: "故障探头编号（可选）",
-  }
+  // 按分组组织字段
+  const fieldGroups = [
+    {
+      title: "基本信息",
+      icon: "📋",
+      color: "from-gray-50 to-slate-50",
+      borderColor: "border-gray-200",
+      fields: {
+        company_name: "委托单位名称",
+        gas: "检测气体",
+        date: "检测日期",
+      }
+    },
+    {
+      title: "设备信息", 
+      icon: "🏭",
+      color: "from-green-50 to-emerald-50",
+      borderColor: "border-green-200",
+      fields: {
+        alert_factory: "公司名称",
+        alert_type: "品牌型号",
+      }
+    },
+    {
+      title: "探头配置",
+      icon: "🔧", 
+      color: "from-purple-50 to-violet-50",
+      borderColor: "border-purple-200",
+      fields: {
+        all_nums: "探头总数量",
+        start_num: "探头起始编号",
+        problem_nums: "故障探头编号",
+      }
+    },
+    {
+      title: "分布配置",
+      icon: "📍",
+      color: "from-rose-50 to-pink-50", 
+      borderColor: "border-rose-200",
+      fields: {
+        sections: "探头分布区域",
+        sections_num: "各区域探头数量",
+      }
+    },
+    {
+      title: "环境参数",
+      icon: "🌡️",
+      color: "from-orange-50 to-amber-50",
+      borderColor: "border-orange-200", 
+      fields: {
+        temperature: "温度（°C）",
+        humidity: "湿度（%）",
+      }
+    }
+  ]
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
-        <h3 className="text-xl font-bold mb-6 text-gray-800">请确认以下信息</h3>
-        <ul className="space-y-3">
-          {Object.entries(fieldLabels).map(([key, label]) => (
-            <li key={key} className="flex justify-between border-b pb-2">
-              <span className="text-gray-600">{label}</span>
-              <span className="font-medium text-gray-900">{data?.[key] || <span className="text-gray-400">-</span>}</span>
-            </li>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto relative mx-4 animate-fade-in-up">
+        {/* 标题区域 */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">确认证书信息</h3>
+          <p className="text-gray-600">请仔细核对以下信息，确认无误后点击生成</p>
+        </div>
+
+        {/* 分组信息展示 */}
+        <div className="space-y-6 mb-8">
+          {fieldGroups.map((group, groupIndex) => (
+            <div key={groupIndex} className={`bg-gradient-to-r ${group.color} border ${group.borderColor} rounded-xl p-6`}>
+              <div className="flex items-center mb-5">
+                <span className="text-2xl mr-3">{group.icon}</span>
+                <h4 className="text-lg font-semibold text-gray-800">{group.title}</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(group.fields).map(([key, label]) => {
+                  const value = data?.[key];
+                  const displayValue = value || "-";
+                  return (
+                    <div key={key} className="bg-white bg-opacity-70 rounded-lg p-4 border border-white border-opacity-50">
+                      <div className="text-sm font-medium text-gray-600 mb-2">{label}</div>
+                      <div className={`text-base font-semibold ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {displayValue}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ))}
-        </ul>
-        <div className="flex justify-end gap-4 mt-8">
+        </div>
+
+        {/* 按钮区域 */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t border-gray-200">
           <button
             type="button"
-            className="px-5 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+            className="px-8 py-3 rounded-xl border-2 border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
             onClick={onCancel}
-          >返回修改</button>
+          >
+            <span className="flex items-center justify-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+              </svg>
+              返回修改
+            </span>
+          </button>
           <button
             type="button"
-            className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 shadow-lg"
             onClick={onConfirm}
-          >确认生成</button>
+          >
+            <span className="flex items-center justify-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              确认生成证书
+            </span>
+          </button>
         </div>
       </div>
     </div>

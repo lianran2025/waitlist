@@ -21,7 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <div id="react-datepicker-portal"></div>
+      </body>
     </html>
   );
 }
