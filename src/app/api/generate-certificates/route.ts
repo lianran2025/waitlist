@@ -27,14 +27,18 @@ export async function POST(req: NextRequest) {
     const problemNumsRaw = formData.get('problem_nums') as string | null;
     const gas = formData.get('gas') as string;
 
-    // 根据gas值设置gas_num
+    // 根据gas值设置gas_num和REL
     let gas_num: string;
+    let REL: string;
     if (gas === '甲烷') {
       gas_num = 'GBW(E)061662';
+      REL = '1.5%';
     } else if (gas === '丙烷') {
       gas_num = 'GBW(E)061853';
+      REL = '1%';
     } else {
       gas_num = 'GBW(E)061662'; // 默认值
+      REL = '1.5%'; // 默认值
     }
 
     // 校验
@@ -166,6 +170,7 @@ export async function POST(req: NextRequest) {
         gongneng: isProblem ? '异常' : '正常',
         gas: gas,
         gas_num: gas_num,
+        REL: REL,
       };
 
       const content = new PizZip(templateBuffer);
