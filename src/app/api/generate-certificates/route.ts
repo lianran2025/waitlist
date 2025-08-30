@@ -92,20 +92,29 @@ export async function POST(req: NextRequest) {
 
     function returnFormatNum(num: number): string {
       num = Number(num);
+      if (num < 10) return `000${num}`;
+      if (num < 100) return `00${num}`;
+      if (num < 1000) return `0${num}`;
+      return `${num}`;
+    }
+
+    function returnFormatNum3(num: number): string {
+      num = Number(num);
       if (num < 10) return `00${num}`;
       if (num < 100) return `0${num}`;
       return `${num}`;
     }
 
     function getFileNum(date: string, num: number, startNum: number): string {
-      return `ZJYX-${date}0${returnFormatNum(Number(num) + Number(startNum))}`;
+      const serialNum = returnFormatNum(Number(num) + Number(startNum));
+      return `ZJYX-${date}${serialNum}`;
     }
 
     function createAllAlertsNumList(sections: string[], sectionsNum: number[]): string[] {
       const allAlertsNum: string[] = [];
       for (let i = 0; i < sections.length; i++) {
         for (let j = 0; j < Number(sectionsNum[i]); j++) {
-          allAlertsNum.push(`${sections[i]}${returnFormatNum(Number(j + 1))}`);
+          allAlertsNum.push(`${sections[i]}${returnFormatNum3(Number(j + 1))}`);
         }
       }
       return allAlertsNum;
@@ -195,7 +204,7 @@ export async function POST(req: NextRequest) {
       }
 
       const out = doc.getZip().generate({ type: 'nodebuffer' });
-      const docxName = `${companyName}_${fileNum}_${alertNum}.docx`;
+      const docxName = `${fileNum}-${alertNum}.docx`;
       zip.file(docxName, out);
       docxBuffers.push({ name: docxName, buffer: out });
     }
