@@ -358,15 +358,54 @@ def download_file(task_id, filetype):
     try:
         if filetype == 'merged':
             file_path = os.path.join(MERGED_FOLDER, f'{task_id}_merged.pdf')
+            
+            # 获取自定义文件名
+            filename = request.args.get('filename', f'merged_{task_id}.pdf')
+            
+            if not os.path.exists(file_path):
+                return jsonify({'error': '文件不存在'}), 404
+            
+            return send_file(
+                file_path,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/pdf'
+            )
         elif filetype == 'pdfs':
             file_path = os.path.join(PDF_FOLDER, task_id)
             # 可打包为 zip 返回
             shutil.make_archive(file_path, 'zip', file_path)
             file_path += '.zip'
+            
+            # 获取自定义文件名
+            filename = request.args.get('filename', f'pdfs_{task_id}.zip')
+            
+            if not os.path.exists(file_path):
+                return jsonify({'error': '文件不存在'}), 404
+            
+            return send_file(
+                file_path,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/zip'
+            )
         elif filetype == 'docx':
             file_path = os.path.join(UPLOAD_FOLDER, task_id)
             shutil.make_archive(file_path, 'zip', file_path)
             file_path += '.zip'
+            
+            # 获取自定义文件名
+            filename = request.args.get('filename', f'certificates_{task_id}.zip')
+            
+            if not os.path.exists(file_path):
+                return jsonify({'error': '文件不存在'}), 404
+            
+            return send_file(
+                file_path,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/zip'
+            )
         elif filetype == 'complete':
             # 新增：下载完整压缩包
             filename = request.args.get('filename', f'certificates_{task_id}.zip')
@@ -386,17 +425,44 @@ def download_file(task_id, filetype):
             )
         else:
             return jsonify({'error': '文件类型错误'}), 400
-        
-        if not os.path.exists(file_path):
-            return jsonify({'error': '文件不存在'}), 404
-            
-        return send_file(file_path, as_attachment=True)
     except Exception as e:
         log = f"下载文件失败: {str(e)}"
         print(log)
         if task_id in task_status and 'logs' in task_status[task_id]:
             task_status[task_id]['logs'].append(log)
         return jsonify({'error': f'下载失败: {str(e)}'}), 500
+
+# 新增：强制完成任务的接口（用于仅生成证书模式）
+@app.route('/force-complete/<task_id>', methods=['POST'])
+def force_complete_task(task_id):
+    try:
+        log = f"强制标记任务完成，任务ID: {task_id}"
+        print(log)
+        if task_id in task_status and 'logs' in task_status[task_id]:
+            task_status[task_id]['logs'].append(log)
+        
+        # 更新任务状态为完成
+        if task_id in task_status:
+            task_status[task_id]['done'] = True
+            task_status[task_id]['convert_done'] = False  # 未转换PDF
+            task_status[task_id]['merge_done'] = False    # 未合并PDF
+            task_status[task_id]['package_done'] = False  # 未生成完整包
+        
+        return jsonify({
+            'status': 'success',
+            'message': '任务已标记为完成',
+            'task_id': task_id
+        })
+        
+    except Exception as e:
+        log = f"强制完成任务失败: {str(e)}"
+        print(log)
+        if task_id in task_status and 'logs' in task_status[task_id]:
+            task_status[task_id]['logs'].append(log)
+        return jsonify({
+            'status': 'error',
+            'message': f'强制完成失败: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     print("=" * 50)

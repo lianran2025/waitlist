@@ -38,6 +38,8 @@ export default function HomePage() {
   const [errorCount, setErrorCount] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [taskCompleted, setTaskCompleted] = useState(false);
+  const [convertToPdf, setConvertToPdf] = useState(false); // 新增：PDF转换选项
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false); // 高级选项折叠状态
 
   // 添加日志函数
   const addLog = (message: string) => {
@@ -121,6 +123,7 @@ export default function HomePage() {
     formData.set("alert_factory", selectedCompany)
     formData.set("alert_type", selectedModel)
     formData.set("gas", selectedGas)
+    formData.set("convert_to_pdf", convertToPdf.toString())
 
     const sectionsRaw = (formData.get("sections") as string || "").trim()
     const sections = sectionsRaw ? sectionsRaw.split(/\s+/).filter(Boolean) : [""]
@@ -158,6 +161,7 @@ export default function HomePage() {
     dataObj["alert_factory"] = selectedCompany
     dataObj["alert_type"] = selectedModel
     dataObj["gas"] = selectedGas
+    dataObj["convert_to_pdf"] = convertToPdf
     dataObj["date"] = selectedDate.toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: '2-digit', 
@@ -209,7 +213,12 @@ export default function HomePage() {
             setPolling(false);
             setTaskCompleted(true);
             setMergeDone(true);
-            addLog('✅ 所有任务完成！可以下载了！');
+            
+            if (convertToPdf) {
+              addLog('✅ 证书生成和PDF转换完成！可以下载完整包了！');
+            } else {
+              addLog('✅ 证书生成完成！可以下载了！');
+            }
             
             if (pollingRef.current) {
               clearInterval(pollingRef.current);
@@ -337,6 +346,8 @@ export default function HomePage() {
           const formattedDate = `${year}${month}${day}`
           console.log(`[确认生成] 重新格式化日期: ${formattedDate}`)
           formData.append(k, formattedDate)
+        } else if (k === 'convert_to_pdf') {
+          formData.append(k, String(v))
         } else {
           formData.append(k, v as string)
         }
@@ -365,6 +376,16 @@ export default function HomePage() {
       setPdfUrl(data.pdfUrl)
       setCompleteZipUrl(data.completeZipUrl)
       setZipFileName(data.zipFileName || '证书包.zip')
+      
+      // 如果不需要转换PDF，直接设置为完成状态
+      if (!data.convertToPdf) {
+        setProgress(100);
+        setProgressText('证书生成完成！');
+        setMergeDone(true);
+        setTaskCompleted(true);
+        addLog('✅ 证书生成完成！可以下载了！');
+        return; // 不需要轮询
+      }
       
       if (currentTaskId) {
         setProgress(15)
@@ -679,6 +700,71 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* 高级选项折叠区域 */}
+          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-xl shadow-sm animate-fade-in delay-250">
+            {/* 高级选项标题栏 */}
+            <div 
+              className="p-4 cursor-pointer hover:bg-blue-50 transition-colors rounded-xl"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center mr-3">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">高级选项</h3>
+                    <p className="text-sm text-gray-600">文件格式和处理选项</p>
+                  </div>
+                </div>
+                <svg 
+                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showAdvancedOptions ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            {/* 可折叠的内容区域 */}
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showAdvancedOptions ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+              <div className="px-6 pb-6">
+                <div className="border-t border-cyan-200 pt-4">
+                  <div className="flex items-start">
+                    <input
+                      id="convertToPdf"
+                      type="checkbox"
+                      checked={convertToPdf}
+                      onChange={(e) => setConvertToPdf(e.target.checked)}
+                      className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded mt-1"
+                    />
+                    <label htmlFor="convertToPdf" className="ml-3 text-sm text-gray-700">
+                      <span className="font-medium text-gray-800">转换为PDF格式并合并</span>
+                      <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 text-amber-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          <span className="text-sm font-medium text-amber-800">
+                            勾选后将生成PDF文件并合并为一个完整文档
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-700 mt-1 ml-6">
+                          ⏱️ 处理时间较长，请耐心等待
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="pt-4 animate-fade-in delay-300">
             <button 
               type="submit" 
@@ -724,8 +810,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 下载区域 - 只在真正完成时显示 */}
-        {mergeDone && completeZipUrl && (
+        {/* 下载区域 - 根据是否转换PDF显示不同内容 */}
+        {mergeDone && (
           <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200 text-center">
             <div className="flex items-center justify-center mb-3">
               <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
@@ -735,20 +821,45 @@ export default function HomePage() {
               </div>
             </div>
             <h3 className="text-lg font-medium text-green-900 mb-4">处理完成！</h3>
-            <a
-              href={completeZipUrl}
-              download={zipFileName || '证书包.zip'}
-              onClick={() => {
-                console.log(`[下载] 开始下载: ${completeZipUrl}`);
-                console.log(`[下载] 文件名: ${zipFileName}`);
-              }}
-              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              下载完整证书包
-            </a>
+            
+            {/* 根据convertToPdf显示不同的下载选项 */}
+            {convertToPdf ? (
+              // PDF模式：显示完整包下载
+              completeZipUrl && (
+                <a
+                  href={completeZipUrl}
+                  download={zipFileName || '证书包.zip'}
+                  onClick={() => {
+                    console.log(`[下载] 开始下载: ${completeZipUrl}`);
+                    console.log(`[下载] 文件名: ${zipFileName}`);
+                  }}
+                  className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  下载完整证书包（含PDF）
+                </a>
+              )
+            ) : (
+              // 仅证书模式：显示docx文件下载
+              downloadUrl && (
+                <a
+                  href={downloadUrl}
+                  download={zipFileName || '证书文件.zip'}
+                  onClick={() => {
+                    console.log(`[下载] 开始下载证书文件: ${downloadUrl}`);
+                    console.log(`[下载] 文件名: ${zipFileName}`);
+                  }}
+                  className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  下载证书文件
+                </a>
+              )
+            )}
           </div>
         )}
 

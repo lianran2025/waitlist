@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     const alertType = formData.get('alert_type') as string;
     const problemNumsRaw = formData.get('problem_nums') as string | null;
     const gas = formData.get('gas') as string;
+    const convertToPdf = formData.get('convert_to_pdf') === 'true';
 
     // 根据gas值设置gas_num和REL
     let gas_num: string;
@@ -238,25 +239,37 @@ export async function POST(req: NextRequest) {
     // 生成压缩包名称：委托单位名称+简化日期格式.zip (如：XX公司20250612.zip)
     const zipFileName = `${companyName}${date}.zip`;
     
-    const docxZipUrl = `${winApi}/download/${taskId}/docx`;
+    const docxZipUrl = `${winApi}/download/${taskId}/docx?filename=${encodeURIComponent(zipFileName)}`;
     const pdfUrl = `${winApi}/download/${taskId}/merged`;
     const completeZipUrl = `${winApi}/download/${taskId}/complete?filename=${encodeURIComponent(zipFileName)}`;
     
-    // 4. 后台异步串联调用 convert/merge
+    // 4. 后台异步处理（根据convertToPdf决定是否执行PDF转换）
     setImmediate(async () => {
       try {
-        console.log(`[后台] 开始转换 PDF，taskId=${taskId}`);
-        await axios.post(`${winApi}/convert/${taskId}`, {}, { timeout: 300000 });
-        console.log(`[后台] 转换 PDF 完成，taskId=${taskId}`);
-        await axios.post(`${winApi}/merge/${taskId}`, {}, { timeout: 300000 });
-        console.log(`[后台] 合并 PDF 完成，taskId=${taskId}`);
-        // 新增：生成完整压缩包
-        await axios.post(`${winApi}/package/${taskId}`, { 
-          filename: zipFileName 
-        }, { timeout: 300000 });
-        console.log(`[后台] 生成完整压缩包完成，taskId=${taskId}`);
+        if (convertToPdf) {
+          console.log(`[后台] 开始转换 PDF，taskId=${taskId}`);
+          await axios.post(`${winApi}/convert/${taskId}`, {}, { timeout: 300000 });
+          console.log(`[后台] 转换 PDF 完成，taskId=${taskId}`);
+          await axios.post(`${winApi}/merge/${taskId}`, {}, { timeout: 300000 });
+          console.log(`[后台] 合并 PDF 完成，taskId=${taskId}`);
+          // 生成完整压缩包（含PDF）
+          await axios.post(`${winApi}/package/${taskId}`, { 
+            filename: zipFileName 
+          }, { timeout: 300000 });
+          console.log(`[后台] 生成完整压缩包完成，taskId=${taskId}`);
+        } else {
+          console.log(`[后台] 跳过PDF转换，仅生成证书，taskId=${taskId}`);
+          // 这里可以调用一个直接完成的API或设置状态为完成
+          try {
+            // 尝试调用完成接口，如果不存在则忽略
+            await axios.post(`${winApi}/force-complete/${taskId}`, {}, { timeout: 30000 });
+            console.log(`[后台] 标记任务完成，taskId=${taskId}`);
+          } catch (e) {
+            console.log(`[后台] 无force-complete接口，任务将自然完成，taskId=${taskId}`);
+          }
+        }
       } catch (e) {
-        console.error(`[后台] 合并流程异常，taskId=${taskId}`, e);
+        console.error(`[后台] 处理流程异常，taskId=${taskId}`, e);
       }
     });
     // 5. 立即响应
@@ -266,7 +279,8 @@ export async function POST(req: NextRequest) {
       docxZipUrl,
       pdfUrl,
       completeZipUrl,
-      zipFileName
+      zipFileName,
+      convertToPdf
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
