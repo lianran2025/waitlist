@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
       const allAlertsNum: string[] = [];
       for (let i = 0; i < sections.length; i++) {
         for (let j = 0; j < Number(sectionsNum[i]); j++) {
-          allAlertsNum.push(`${sections[i]}${returnFormatNum3(Number(j + 1))}`);
+          allAlertsNum.push(`${sections[i]}_${returnFormatNum3(Number(j + 1))}`);
         }
       }
       return allAlertsNum;

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const certificates = []
     for (let i = 0; i < all_nums; i++) {
       const section = sections_list[Math.floor(i / sections_num_list[0])]
-      const alert_num = `${section}${String(i + 1).padStart(3, '0')}`
+      const alert_num = `${section}_${String(i + 1).padStart(3, '0')}`
       const file_num = `ZJYX-${formatted_date}0${String(i + start_num).padStart(3, '0')}`
 
       certificates.push({
