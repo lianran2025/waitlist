@@ -239,9 +239,9 @@ export async function POST(req: NextRequest) {
     // 生成压缩包名称：委托单位名称+简化日期格式.zip (如：XX公司20250612.zip)
     const zipFileName = `${companyName}${date}.zip`;
     
-    const docxZipUrl = `${winApi}/download/${taskId}/docx?filename=${encodeURIComponent(zipFileName)}`;
-    const pdfUrl = `${winApi}/download/${taskId}/merged`;
-    const completeZipUrl = `${winApi}/download/${taskId}/complete?filename=${encodeURIComponent(zipFileName)}`;
+    const docxZipUrl = `/api/download/${taskId}/docx?filename=${encodeURIComponent(zipFileName)}`;
+    const pdfUrl = `/api/download/${taskId}/merged`;
+    const completeZipUrl = `/api/download/${taskId}/complete?filename=${encodeURIComponent(zipFileName)}`;
     
     // 4. 后台异步处理（根据convertToPdf决定是否执行PDF转换）
     setImmediate(async () => {
