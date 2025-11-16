@@ -6,6 +6,7 @@ import Docxtemplater from 'docxtemplater'
 import JSZip from 'jszip'
 import axios from 'axios'
 import FormData from 'form-data'
+import { companiesJson } from '@/lib/companies-json'
 
 export async function POST(req: NextRequest) {
   try {
@@ -138,6 +139,39 @@ export async function POST(req: NextRequest) {
     }
 
     const problemNums = parseProblemNums(problemNumsRaw || '');
+    
+    // 根据公司名称（alert_factory）查询公司信息，获取 alarm 值
+    let alarmValue = 25; // 默认值
+    if (alertFactory) {
+      const company = companiesJson.findFirst({
+        where: {
+          fullName: alertFactory
+        }
+      });
+      
+      if (company && company.alarm) {
+        alarmValue = company.alarm;
+        console.log(`[动作值查询] 公司: ${alertFactory}, 动作值: ${alarmValue}`);
+      } else {
+        // 如果精确匹配失败，尝试模糊匹配
+        const companyFuzzy = companiesJson.findFirst({
+          where: {
+            OR: [
+              { fullName: { contains: alertFactory } },
+              { shortName: { contains: alertFactory } }
+            ]
+          }
+        });
+        
+        if (companyFuzzy && companyFuzzy.alarm) {
+          alarmValue = companyFuzzy.alarm;
+          console.log(`[动作值查询] 模糊匹配成功 - 公司: ${alertFactory}, 匹配到: ${companyFuzzy.fullName}, 动作值: ${alarmValue}`);
+        } else {
+          console.warn(`[动作值查询] 未找到公司: ${alertFactory}，使用默认值: ${alarmValue}`);
+        }
+      }
+    }
+    
     const allAlertNums = createAllAlertsNumList(sections, sectionsNum);
     const zip = new JSZip();
 
@@ -165,8 +199,8 @@ export async function POST(req: NextRequest) {
         company_name: companyName,
         alert_type: alertType,
         alert_factory: alertFactory,
-        dongzuozhi: isProblem ? '/' : 25,
-        dongzuozhi_with_unit: isProblem ? '/' : '25%LEL',
+        dongzuozhi: isProblem ? '/' : alarmValue,
+        dongzuozhi_with_unit: isProblem ? '/' : `${alarmValue}%LEL`,
         alert_num: alertNum,
         date_now,
         date_next,
