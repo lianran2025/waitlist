@@ -115,8 +115,15 @@ export async function POST(req: NextRequest) {
     function createAllAlertsNumList(sections: string[], sectionsNum: number[]): string[] {
       const allAlertsNum: string[] = [];
       for (let i = 0; i < sections.length; i++) {
+        const section = sections[i].trim(); // 去除空白字符
         for (let j = 0; j < Number(sectionsNum[i]); j++) {
-          allAlertsNum.push(`${sections[i]}_${returnFormatNum3(Number(j + 1))}`);
+          const numStr = returnFormatNum3(Number(j + 1));
+          // 如果区域名称为空，只返回编号；否则返回"区域名_编号"
+          if (section === '') {
+            allAlertsNum.push(numStr);
+          } else {
+            allAlertsNum.push(`${section}_${numStr}`);
+          }
         }
       }
       return allAlertsNum;
