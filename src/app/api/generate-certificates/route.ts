@@ -198,9 +198,12 @@ export async function POST(req: NextRequest) {
     }
     
     const allAlertNums = createAllAlertsNumList(sections, sectionsNum);
-    // 1. 生成所有 docx 并打包 zip（保留原有逻辑）
+    console.log(`[证书生成] 开始生成 DOCX，公司=${companyName}，探头数=${allNums}，预计文件数=${allNums * 2}`);
+
+    // 1. 生成所有 docx，随后统一上传到 Windows 后端服务
     const docxBuffers: { name: string, buffer: Buffer }[] = [];
     for (let i = 0; i < allNums; i++) {
+      const itemStart = Date.now();
       const [date_now, date_second] = formatDate(String(date));
       const fileNum = getFileNum(String(date), i, startNum);
       const alertInfo = allAlertNums[i] || { place: '', num: `未知${returnFormatNum(i + startNum)}` };
@@ -245,8 +248,11 @@ export async function POST(req: NextRequest) {
       };
 
       try {
+        console.log(`[证书生成] 渲染第 ${i + 1}/${allNums} 个探头，编号=${fileNum}，探头=${alertNumPlace ? `${alertNumPlace} ` : ''}${alertNum}，故障=${isProblem ? '是' : '否'}`);
         const certificateBuffer = await renderDocxTemplate(certificateTemplatePath, data);
+        console.log(`[证书生成] 证书渲染完成，编号=${fileNum}，大小=${certificateBuffer.length} bytes`);
         const recordBuffer = await renderDocxTemplate(recordTemplatePath, data);
+        console.log(`[证书生成] 原始记录渲染完成，编号=${fileNum}，大小=${recordBuffer.length} bytes，用时=${Date.now() - itemStart}ms`);
         const baseDocxName = `${fileNum}-${alertNum}`;
 
         docxBuffers.push({ name: `${baseDocxName}-证书.docx`, buffer: certificateBuffer });
@@ -266,23 +272,21 @@ export async function POST(req: NextRequest) {
     docxBuffers.forEach(doc => {
       nodeForm.append('files', doc.buffer, { filename: doc.name });
     });
-    // submit 方法是 callback 风格，需要 Promise 封装
-    const uploadResp = await new Promise((resolve, reject) => {
-      nodeForm.submit(`${winApi}/upload`, (err, res) => {
-        if (err) return reject(err);
-        let raw = '';
-        res.setEncoding('utf8');
-        res.on('data', chunk => raw += chunk);
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(raw));
-          } catch (e) {
-            reject(e);
-          }
-        });
-      });
+    const totalBytes = docxBuffers.reduce((sum, doc) => sum + doc.buffer.length, 0);
+    console.log(`[证书生成] DOCX 全部生成完成，开始上传到 ${winApi}/upload，文件数=${docxBuffers.length}，总大小=${totalBytes} bytes`);
+
+    const uploadResp = await axios.post(`${winApi}/upload`, nodeForm, {
+      headers: nodeForm.getHeaders(),
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      timeout: 120000,
     });
-    const taskId = (uploadResp as any).task_id;
+    console.log('[证书生成] 上传完成，Windows 后端返回:', uploadResp.data);
+    const taskId = uploadResp.data.task_id;
+
+    if (!taskId) {
+      throw new Error('Windows 后端未返回 task_id');
+    }
 
     // 3. 立即返回 taskId，前端可用 taskId 轮询进度
     // 生成压缩包名称：委托单位名称+简化日期格式.zip (如：XX公司20250612.zip)

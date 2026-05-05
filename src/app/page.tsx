@@ -48,6 +48,21 @@ export default function HomePage() {
     setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
   };
 
+  const parseResponseBody = async (response: Response) => {
+    const text = await response.text();
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return {
+        message: text.startsWith('<!DOCTYPE')
+          ? `服务器返回了 HTML 错误页（HTTP ${response.status}），请查看 Next.js 服务端日志`
+          : text.slice(0, 500)
+      };
+    }
+  };
+
   useEffect(() => {
     fetch("/api/companies/data")
       .then(res => res.json())
@@ -364,11 +379,11 @@ export default function HomePage() {
       })
       
       if (!response.ok) {
-        const data = await response.json()
+        const data = await parseResponseBody(response)
         throw new Error(data.message || "生成证书失败")
       }
       
-      const data = await response.json()
+      const data = await parseResponseBody(response)
       
       let currentTaskId = data.taskId;
       if (!currentTaskId) {
