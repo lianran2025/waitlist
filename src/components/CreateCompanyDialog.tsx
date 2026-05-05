@@ -13,6 +13,7 @@ interface FormErrors {
   fullName?: string
   products?: string
   alarm?: string
+  range?: string
 }
 
 export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompanyDialogProps) {
@@ -20,7 +21,8 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
     shortName: '',
     fullName: '',
     products: '',
-    alarm: ''
+    alarm: '',
+    range: '0-100'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -41,6 +43,9 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
       newErrors.alarm = '请输入预警阈值'
     } else if (isNaN(Number(formData.alarm)) || Number(formData.alarm) < 0) {
       newErrors.alarm = '预警阈值必须为非负数'
+    }
+    if (!formData.range.trim()) {
+      newErrors.range = '请输入量程'
     }
 
     setErrors(newErrors)
@@ -65,6 +70,7 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
         body: JSON.stringify({
           ...formData,
           alarm: Number(formData.alarm),
+          range: formData.range.trim(),
           products: formData.products.split(',').map(p => p.trim()).filter(Boolean)
         }),
       })
@@ -79,7 +85,8 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
         shortName: '',
         fullName: '',
         products: '',
-        alarm: ''
+        alarm: '',
+        range: '0-100'
       })
       setErrors({})
     } catch (error) {
@@ -95,7 +102,8 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
       shortName: '',
       fullName: '',
       products: '',
-      alarm: ''
+      alarm: '',
+      range: '0-100'
     })
     setErrors({})
     onClose()
@@ -218,6 +226,31 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
               />
               {errors.alarm && (
                 <p className="mt-1 text-sm text-red-600">{errors.alarm}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="range" className="block text-sm font-medium text-gray-700 mb-1">
+                量程（%LEL）
+              </label>
+              <input
+                type="text"
+                id="range"
+                value={formData.range}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, range: e.target.value }))
+                  if (errors.range) {
+                    setErrors(prev => ({ ...prev, range: undefined }))
+                  }
+                }}
+                placeholder="例如：0-100 或 10-100"
+                className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  errors.range ? 'border-red-300' : 'border-gray-300'
+                }`}
+                style={{ height: '42px', padding: '0.75rem 1rem' }}
+              />
+              {errors.range && (
+                <p className="mt-1 text-sm text-red-600">{errors.range}</p>
               )}
             </div>
 

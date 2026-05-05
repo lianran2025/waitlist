@@ -8,7 +8,7 @@ export const revalidate = 0
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, fullname, list, alarm } = body
+    const { name, fullname, list, alarm, range } = body
 
     // 查找是否存在相同全名的公司
     const existingCompany = companiesJson.findFirst({
@@ -24,7 +24,8 @@ export async function POST(request: Request) {
           id: existingCompany.id
         },
         data: {
-          products: list
+          products: list,
+          ...(range ? { range } : {})
         }
       })
 
@@ -32,7 +33,8 @@ export async function POST(request: Request) {
         name: updatedCompany.shortName,
         fullname: updatedCompany.fullName,
         list: updatedCompany.products,
-        alarm: updatedCompany.alarm
+        alarm: updatedCompany.alarm,
+        range: updatedCompany.range
       })
 
       // 添加缓存控制头
@@ -49,7 +51,8 @@ export async function POST(request: Request) {
           shortName: name,
           fullName: fullname,
           products: list,
-          alarm: alarm || 0
+          alarm: alarm || 0,
+          range: range || '0-100'
         }
       })
 
@@ -57,7 +60,8 @@ export async function POST(request: Request) {
         name: newCompany.shortName,
         fullname: newCompany.fullName,
         list: newCompany.products,
-        alarm: newCompany.alarm
+        alarm: newCompany.alarm,
+        range: newCompany.range
       })
 
       // 添加缓存控制头

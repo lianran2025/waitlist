@@ -3,10 +3,10 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import PizZip from 'pizzip'
 import Docxtemplater from 'docxtemplater'
-import JSZip from 'jszip'
 import axios from 'axios'
 import FormData from 'form-data'
 import { companiesJson } from '@/lib/companies-json'
+import { calibrationRecordsJson } from '@/lib/calibration-records-json'
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const date = formData.get('date') as string
     const temperature = formData.get('temperature') as string
     const humidity = formData.get('humidity') as string
+    const liangcheng = (formData.get('liangcheng') as string) || '0-100'
     
     // 添加调试信息
     console.log('[后端API] 收到的日期参数:', date, typeof date)
@@ -83,13 +84,12 @@ export async function POST(req: NextRequest) {
 
       const formatted = `${year} 年 ${String(month + 1).padStart(2, '0')} 月 ${String(day).padStart(2, '0')} 日`;
       
-      // 计算下一年日期（下一年的前一天）
-      const nextYear = new Date(date);
-      nextYear.setFullYear(year + 1);  // 先加一年
-      nextYear.setDate(nextYear.getDate() - 1);  // 再减一天
-      const formattedNext = `${nextYear.getFullYear()} 年 ${String(nextYear.getMonth() + 1).padStart(2, '0')} 月 ${String(nextYear.getDate()).padStart(2, '0')} 日`;
+      // 计算校准日期：检测日期后一天
+      const secondDate = new Date(date);
+      secondDate.setDate(secondDate.getDate() + 1);
+      const formattedSecond = `${secondDate.getFullYear()} 年 ${String(secondDate.getMonth() + 1).padStart(2, '0')} 月 ${String(secondDate.getDate()).padStart(2, '0')} 日`;
 
-      return [formatted, formattedNext];
+      return [formatted, formattedSecond];
     }
 
     function returnFormatNum(num: number): string {
@@ -112,18 +112,13 @@ export async function POST(req: NextRequest) {
       return `ZJYX-${date}${serialNum}`;
     }
 
-    function createAllAlertsNumList(sections: string[], sectionsNum: number[]): string[] {
-      const allAlertsNum: string[] = [];
+    function createAllAlertsNumList(sections: string[], sectionsNum: number[]): { place: string, num: string }[] {
+      const allAlertsNum: { place: string, num: string }[] = [];
       for (let i = 0; i < sections.length; i++) {
         const section = sections[i].trim(); // 去除空白字符
         for (let j = 0; j < Number(sectionsNum[i]); j++) {
           const numStr = returnFormatNum3(Number(j + 1));
-          // 如果区域名称为空，只返回编号；否则返回"区域名_编号"
-          if (section === '') {
-            allAlertsNum.push(numStr);
-          } else {
-            allAlertsNum.push(`${section}_${numStr}`);
-          }
+          allAlertsNum.push({ place: section, num: numStr });
         }
       }
       return allAlertsNum;
@@ -143,6 +138,29 @@ export async function POST(req: NextRequest) {
         }
       });
       return result;
+    }
+
+    async function renderDocxTemplate(templatePath: string, data: Record<string, any>): Promise<Buffer> {
+      const templateBuffer = await fs.readFile(templatePath);
+      const content = new PizZip(templateBuffer);
+      const doc = new Docxtemplater(content, { 
+        paragraphLoop: true, 
+        linebreaks: true,
+        delimiters: {
+          start: '{{',
+          end: '}}'
+        }
+      });
+
+      try {
+        doc.render(data);
+      } catch (err) {
+        const errorMsg = (err as Error).message || String(err);
+        console.error('模板渲染错误:', errorMsg);
+        throw new Error('模板渲染失败: ' + errorMsg);
+      }
+
+      return doc.getZip().generate({ type: 'nodebuffer' });
     }
 
     const problemNums = parseProblemNums(problemNumsRaw || '');
@@ -180,43 +198,45 @@ export async function POST(req: NextRequest) {
     }
     
     const allAlertNums = createAllAlertsNumList(sections, sectionsNum);
-    const zip = new JSZip();
-
     // 1. 生成所有 docx 并打包 zip（保留原有逻辑）
     const docxBuffers: { name: string, buffer: Buffer }[] = [];
     for (let i = 0; i < allNums; i++) {
-      const [date_now, date_next] = formatDate(String(date));
+      const [date_now, date_second] = formatDate(String(date));
       const fileNum = getFileNum(String(date), i, startNum);
-      const alertNum = allAlertNums[i] || `未知${returnFormatNum(i + startNum)}`;
+      const alertInfo = allAlertNums[i] || { place: '', num: `未知${returnFormatNum(i + startNum)}` };
+      const alertNum = alertInfo.num;
+      const alertNumPlace = alertInfo.place;
       // 判断当前编号是否为故障编号（仅根据文件编号后三位判断）
       const isProblem = problemNums.includes(fileNum.slice(-3));
+      const calibrationRecord = calibrationRecordsJson.findRandom();
 
-      // 每个证书单独选择模板
-      let templatePath;
-      if (isProblem) {
-        templatePath = path.join(process.cwd(), 'templates', 'problem.docx');
-      } else {
-        const n = Math.floor(Math.random() * 15) + 1; // 1~15
-        templatePath = path.join(process.cwd(), 'templates', `normal_${n}.docx`);
-      }
-      const templateBuffer = await fs.readFile(templatePath);
+      const certificateTemplatePath = isProblem
+        ? path.join(process.cwd(), 'templates', 'problem.docx')
+        : path.join(process.cwd(), 'templates', 'new_templates', 'new_normal.docx');
+      const recordTemplatePath = path.join(process.cwd(), 'templates', 'new_templates', 'jilu.docx');
+      const alarmActionValue = calibrationRecord?.alarm_action_value || String(alarmValue);
+      const repeatabilityValue = calibrationRecord?.repeatability || '0.4';
+      const responseTimeAvgValue = calibrationRecord?.response_time_avg || '15.4';
 
       const data = {
+        ...(calibrationRecord || {}),
         file_num: fileNum,
         company_name: companyName,
         alert_type: alertType,
         alert_factory: alertFactory,
-        dongzuozhi: isProblem ? '/' : alarmValue,
-        dongzuozhi_with_unit: isProblem ? '/' : `${alarmValue}%LEL`,
+        dongzuozhi: isProblem ? '/' : alarmActionValue,
+        dongzuozhi_with_unit: isProblem ? '/' : `${alarmActionValue}%LEL`,
         alert_num: alertNum,
+        alert_num_place: alertNumPlace,
         date_now,
-        date_next,
+        date_second,
         temperature,
         humidity,
-        random_chongfu: isProblem ? '/' : Math.round((Math.random() * 2) * 10) / 10,
-        random_chongfu_with_unit: isProblem ? '/' : `${Math.round((Math.random() * 2) * 10) / 10}%`,
-        action_time: isProblem ? '/' : Math.floor(Math.random() * (25 - 7 + 1)) + 7,
-        action_time_with_unit: isProblem ? '/' : `${Math.floor(Math.random() * (25 - 7 + 1)) + 7}s`,
+        liangcheng,
+        random_chongfu: isProblem ? '/' : repeatabilityValue,
+        random_chongfu_with_unit: isProblem ? '/' : `${repeatabilityValue}%`,
+        action_time: isProblem ? '/' : responseTimeAvgValue,
+        action_time_with_unit: isProblem ? '/' : `${responseTimeAvgValue}s`,
         alarm_status: isProblem ? '异常' : '正常',
         gongneng: isProblem ? '异常' : '正常',
         gas: gas,
@@ -224,33 +244,21 @@ export async function POST(req: NextRequest) {
         REL: REL,
       };
 
-      const content = new PizZip(templateBuffer);
-      const doc = new Docxtemplater(content, { 
-        paragraphLoop: true, 
-        linebreaks: true,
-        delimiters: {
-          start: '{{',
-          end: '}}'
-        }
-      });
-
       try {
-        doc.render(data);
+        const certificateBuffer = await renderDocxTemplate(certificateTemplatePath, data);
+        const recordBuffer = await renderDocxTemplate(recordTemplatePath, data);
+        const baseDocxName = `${fileNum}-${alertNum}`;
+
+        docxBuffers.push({ name: `${baseDocxName}-证书.docx`, buffer: certificateBuffer });
+        docxBuffers.push({ name: `${baseDocxName}-原始记录.docx`, buffer: recordBuffer });
       } catch (err) {
         const errorMsg = (err as Error).message || String(err);
-        console.error('模板渲染错误:', errorMsg);
         return new Response(JSON.stringify({ 
-          message: '模板渲染失败: ' + errorMsg,
+          message: errorMsg,
           details: err
         }), { status: 500 });
       }
-
-      const out = doc.getZip().generate({ type: 'nodebuffer' });
-      const docxName = `${fileNum}-${alertNum}.docx`;
-      zip.file(docxName, out);
-      docxBuffers.push({ name: docxName, buffer: out });
     }
-    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
     // 2. 上传所有 docx 到 Windows 服务器
     const winApi = process.env.WINDOWS_API_URL || 'http://139.196.115.44:5000';

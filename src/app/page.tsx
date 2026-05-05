@@ -26,6 +26,7 @@ export default function HomePage() {
   const [models, setModels] = useState<string[]>([])
   const [selectedModel, setSelectedModel] = useState("")
   const [selectedModelOption, setSelectedModelOption] = useState<any>(null)
+  const [selectedRange, setSelectedRange] = useState("0-100")
   const [selectedGas, setSelectedGas] = useState("甲烷")
   const [selectedGasOption, setSelectedGasOption] = useState<any>({ label: "甲烷", value: "甲烷" })
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -63,12 +64,14 @@ export default function HomePage() {
       setModels([])
       setSelectedModel("")
       setSelectedModelOption(null)
+      setSelectedRange("0-100")
       return
     }
     const company = companies.find(c => c.fullname === option.value)
     setSelectedCompany(company.fullname)
     setSelectedCompanyOption(option)
     setModels(company.list)
+    setSelectedRange(company.range || "0-100")
     setSelectedModel(company.list[0] || "")
     setSelectedModelOption(company.list[0] ? { label: company.list[0], value: company.list[0] } : null)
   }
@@ -122,6 +125,7 @@ export default function HomePage() {
 
     formData.set("alert_factory", selectedCompany)
     formData.set("alert_type", selectedModel)
+    formData.set("liangcheng", selectedRange)
     formData.set("gas", selectedGas)
     formData.set("convert_to_pdf", convertToPdf.toString())
 
@@ -160,6 +164,7 @@ export default function HomePage() {
     formData.forEach((v, k) => { dataObj[k] = v })
     dataObj["alert_factory"] = selectedCompany
     dataObj["alert_type"] = selectedModel
+    dataObj["liangcheng"] = selectedRange
     dataObj["gas"] = selectedGas
     dataObj["convert_to_pdf"] = convertToPdf
     dataObj["date"] = selectedDate.toLocaleDateString('zh-CN', {

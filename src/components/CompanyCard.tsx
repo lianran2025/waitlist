@@ -1,8 +1,16 @@
-import type { Company } from '@prisma/client'
 import { useState } from 'react'
 import { EditCompanyDialog } from './EditCompanyDialog'
 import { TrashIcon } from '@heroicons/react/24/outline'
 import { Dialog } from '@headlessui/react'
+
+export interface Company {
+  id: string
+  shortName: string
+  fullName: string
+  products: string[]
+  alarm: number
+  range?: string
+}
 
 interface CompanyCardProps {
   company: Company
@@ -63,6 +71,10 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
           <div>
             <span className="text-sm font-medium text-gray-500">预警阈值：</span>
             <span className="text-sm text-gray-900">{company.alarm}</span>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-500">量程：</span>
+            <span className="text-sm text-gray-900">{company.range || '0-100'} %LEL</span>
           </div>
           <div>
             <span className="text-sm font-medium text-gray-500">产品列表：</span>

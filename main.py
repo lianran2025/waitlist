@@ -358,54 +358,15 @@ def download_file(task_id, filetype):
     try:
         if filetype == 'merged':
             file_path = os.path.join(MERGED_FOLDER, f'{task_id}_merged.pdf')
-            
-            # 获取自定义文件名
-            filename = request.args.get('filename', f'merged_{task_id}.pdf')
-            
-            if not os.path.exists(file_path):
-                return jsonify({'error': '文件不存在'}), 404
-            
-            return send_file(
-                file_path,
-                as_attachment=True,
-                download_name=filename,
-                mimetype='application/pdf'
-            )
         elif filetype == 'pdfs':
             file_path = os.path.join(PDF_FOLDER, task_id)
             # 可打包为 zip 返回
             shutil.make_archive(file_path, 'zip', file_path)
             file_path += '.zip'
-            
-            # 获取自定义文件名
-            filename = request.args.get('filename', f'pdfs_{task_id}.zip')
-            
-            if not os.path.exists(file_path):
-                return jsonify({'error': '文件不存在'}), 404
-            
-            return send_file(
-                file_path,
-                as_attachment=True,
-                download_name=filename,
-                mimetype='application/zip'
-            )
         elif filetype == 'docx':
             file_path = os.path.join(UPLOAD_FOLDER, task_id)
             shutil.make_archive(file_path, 'zip', file_path)
             file_path += '.zip'
-            
-            # 获取自定义文件名
-            filename = request.args.get('filename', f'certificates_{task_id}.zip')
-            
-            if not os.path.exists(file_path):
-                return jsonify({'error': '文件不存在'}), 404
-            
-            return send_file(
-                file_path,
-                as_attachment=True,
-                download_name=filename,
-                mimetype='application/zip'
-            )
         elif filetype == 'complete':
             # 新增：下载完整压缩包
             filename = request.args.get('filename', f'certificates_{task_id}.zip')
@@ -425,6 +386,11 @@ def download_file(task_id, filetype):
             )
         else:
             return jsonify({'error': '文件类型错误'}), 400
+        
+        if not os.path.exists(file_path):
+            return jsonify({'error': '文件不存在'}), 404
+            
+        return send_file(file_path, as_attachment=True)
     except Exception as e:
         log = f"下载文件失败: {str(e)}"
         print(log)

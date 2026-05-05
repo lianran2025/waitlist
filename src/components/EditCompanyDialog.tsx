@@ -1,6 +1,6 @@
-import type { Company } from '@prisma/client'
 import { useState } from 'react'
 import { Dialog } from '@headlessui/react'
+import type { Company } from './CompanyCard'
 
 interface EditCompanyDialogProps {
   company: Company
@@ -14,7 +14,8 @@ export function EditCompanyDialog({ company, isOpen, onClose, onUpdate }: EditCo
     shortName: company.shortName,
     fullName: company.fullName,
     products: company.products.join('\n'),
-    alarm: company.alarm
+    alarm: company.alarm,
+    range: company.range || '0-100'
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,6 +29,7 @@ export function EditCompanyDialog({ company, isOpen, onClose, onUpdate }: EditCo
         },
         body: JSON.stringify({
           ...formData,
+          range: formData.range.trim(),
           products: formData.products.split('\n').map(p => p.trim()).filter(Boolean)
         }),
       })
@@ -104,6 +106,20 @@ export function EditCompanyDialog({ company, isOpen, onClose, onUpdate }: EditCo
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
                 min="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                量程（%LEL）
+              </label>
+              <input
+                type="text"
+                value={formData.range}
+                onChange={e => setFormData(prev => ({ ...prev, range: e.target.value }))}
+                placeholder="例如：0-100 或 10-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               />
             </div>
 
