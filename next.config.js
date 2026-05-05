@@ -6,7 +6,7 @@ const nextConfig = {
   // 支持自定义域名和API配置
   env: {
     CUSTOM_DOMAIN: 'zhengshu.yuexinjiance.top',
-    WINDOWS_API_URL: process.env.WINDOWS_API_URL || 'http://139.196.115.44:5000',
+    WINDOWS_API_URL: process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000',
   },
   
   // 头部优化 - 预连接 Google Fonts

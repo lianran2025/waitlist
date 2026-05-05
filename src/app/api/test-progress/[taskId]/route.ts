@@ -15,7 +15,8 @@ export async function GET(
     }
 
     // 直接访问Windows服务器
-    const backendUrl = `http://139.196.115.44:5000/progress/${taskId}`
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000'
+    const backendUrl = `${winApi}/progress/${taskId}`
     
     console.log(`[测试接口] 请求URL: ${backendUrl}`)
     

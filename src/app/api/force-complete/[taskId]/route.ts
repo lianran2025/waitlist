@@ -9,11 +9,12 @@ export async function POST(
   console.log(`[强制完成] 处理任务: ${taskId}`);
   
   try {
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000';
     // 检查Windows服务器上的文件是否存在（使用正确的URL格式）
     const checkUrls = [
-      `http://139.196.115.44:5000/download/${taskId}/docx`,
-      `http://139.196.115.44:5000/download/${taskId}/merged`,
-      `http://139.196.115.44:5000/download/${taskId}/complete?filename=test.zip`
+      `${winApi}/download/${taskId}/docx`,
+      `${winApi}/download/${taskId}/merged`,
+      `${winApi}/download/${taskId}/complete?filename=test.zip`
     ];
 
     console.log(`[强制完成] 检查文件是否存在...`);
@@ -46,9 +47,9 @@ export async function POST(
         status: 'completed',
         forceCompleted: true,
         downloadUrls: {
-          docx: `http://139.196.115.44:5000/download/${taskId}/docx`,
-          pdf: `http://139.196.115.44:5000/download/${taskId}/merged`,
-          complete: `http://139.196.115.44:5000/download/${taskId}/complete?filename=证书包.zip`
+          docx: `${winApi}/download/${taskId}/docx`,
+          pdf: `${winApi}/download/${taskId}/merged`,
+          complete: `${winApi}/download/${taskId}/complete?filename=证书包.zip`
         },
         fileChecks
       };

@@ -10,7 +10,8 @@ export async function POST(
   
   try {
     // 先尝试调用Windows服务器的重置接口（如果有的话）
-    const resetUrl = `http://139.196.115.44:5000/reset/${taskId}`;
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000';
+    const resetUrl = `${winApi}/reset/${taskId}`;
     console.log(`[重置任务] 调用重置接口: ${resetUrl}`);
     
     try {
@@ -38,7 +39,7 @@ export async function POST(
     }
 
     // 如果重置接口不存在，尝试强制刷新状态
-    const progressUrl = `http://139.196.115.44:5000/progress/${taskId}`;
+    const progressUrl = `${winApi}/progress/${taskId}`;
     console.log(`[重置任务] 强制刷新状态: ${progressUrl}`);
     
     const response = await fetch(progressUrl, {

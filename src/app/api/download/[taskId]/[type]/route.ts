@@ -12,7 +12,8 @@ export async function GET(
     console.log(`[下载代理] TaskId: ${taskId}, Type: ${type}, Filename: ${filename}`)
     
     // 构建Windows服务器的下载URL
-    let backendUrl = `http://139.196.115.44:5000/download/${taskId}/${type}`
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000'
+    let backendUrl = `${winApi}/download/${taskId}/${type}`
     if (filename) {
       backendUrl += `?filename=${encodeURIComponent(filename)}`
     }

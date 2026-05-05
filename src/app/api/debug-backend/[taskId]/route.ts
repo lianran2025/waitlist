@@ -9,7 +9,8 @@ export async function GET(
   console.log(`[调试工具] 直接查询Windows服务器状态: ${taskId}`);
   
   try {
-    const backendUrl = `http://139.196.115.44:5000/progress/${taskId}`;
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000';
+    const backendUrl = `${winApi}/progress/${taskId}`;
     console.log(`[调试工具] 请求URL: ${backendUrl}`);
     
     const response = await fetch(backendUrl, {

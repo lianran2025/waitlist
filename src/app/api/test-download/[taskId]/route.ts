@@ -13,7 +13,8 @@ export async function GET(
     console.log(`[测试下载] 文件名: ${filename}`)
     
     // 构建下载URL
-    const downloadUrl = `http://139.196.115.44:5000/download/${taskId}/complete?filename=${encodeURIComponent(filename)}`
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000'
+    const downloadUrl = `${winApi}/download/${taskId}/complete?filename=${encodeURIComponent(filename)}`
     console.log(`[测试下载] 下载URL: ${downloadUrl}`)
     
     // 测试连接

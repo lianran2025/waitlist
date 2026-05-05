@@ -15,7 +15,8 @@ export async function GET(
     }
 
     // 代理请求到后端服务器
-    const backendUrl = `http://139.196.115.44:5000/progress/${taskId}`
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000'
+    const backendUrl = `${winApi}/progress/${taskId}`
     
     const response = await fetch(backendUrl, {
       method: 'GET',

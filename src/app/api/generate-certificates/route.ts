@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. 上传所有 docx 到 Windows 服务器
-    const winApi = process.env.WINDOWS_API_URL || 'http://139.196.115.44:5000';
+    const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000';
     const nodeForm = new FormData();
     docxBuffers.forEach(doc => {
       nodeForm.append('files', doc.buffer, { filename: doc.name });
