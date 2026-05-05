@@ -431,9 +431,11 @@ def force_complete_task(task_id):
         }), 500
 
 if __name__ == '__main__':
+    host = os.environ.get('FLASK_HOST', '127.0.0.1')
+    port = int(os.environ.get('FLASK_PORT', '5000'))
     print("=" * 50)
     print("证书生成服务启动中...")
-    print("服务地址: http://0.0.0.0:5000")
-    print("健康检查: http://0.0.0.0:5000/health")
+    print(f"服务地址: http://{host}:{port}")
+    print(f"健康检查: http://{host}:{port}/health")
     print("=" * 50)
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host=host, port=port, debug=False)

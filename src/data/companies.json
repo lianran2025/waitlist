@@ -8,13 +8,14 @@
       "GTY-AEC2335",
       "AEC2331a",
       "AEC2232b/A",
+      "GTYQ-AEC2232bX",
       "GT-AEC2232bX/A",
       "GT-AEC2232a",
       "GT-AEC2331a"
     ],
     "alarm": 25,
     "createdAt": "2025-05-12 10:24:11.774",
-    "updatedAt": "2025-05-12 11:19:35.386"
+    "updatedAt": "2026-02-18 00:44:01.717"
   },
   {
     "id": "cmakxr6cq000100hwodnmgamv",
@@ -54,12 +55,13 @@
       "GTYQ-AT0602",
       "GT-AT0501",
       "GT-XP4000",
+      "GT-XP3000",
       "GT-AT0503",
       "AT0502AH/L"
     ],
     "alarm": 25,
     "createdAt": "2025-05-12 10:24:12.852",
-    "updatedAt": "2025-05-12 10:24:12.852"
+    "updatedAt": "2025-09-29 00:46:40.002"
   },
   {
     "id": "cmakxr6zq000400hwoghfairj",
@@ -70,12 +72,14 @@
       "GTQ-C600",
       "DT3",
       "GTQ-C630",
+      "GTYQ-C630",
       "IR610",
-      "C630"
+      "C630",
+      "GTQ-C610IR"
     ],
     "alarm": 25,
     "createdAt": "2025-05-12 10:24:13.094",
-    "updatedAt": "2025-05-12 10:24:13.094"
+    "updatedAt": "2026-01-07 04:58:13.395"
   },
   {
     "id": "cmakxr76j000500hw9v1yxaj4",
@@ -86,14 +90,14 @@
       "XH-G800A（四线）",
       "XH-G800A-A（四线）",
       "XH-G800A-B（三线）",
-      "GTY-XH800C（四线）",
+      "GTY-XH800C",
       "GT-XH800A",
       "GTY-XHG800C",
       "XH-G300A-B"
     ],
     "alarm": 15,
     "createdAt": "2025-05-12 10:24:13.339",
-    "updatedAt": "2025-05-12 10:24:13.339"
+    "updatedAt": "2025-10-15 00:44:21.304"
   },
   {
     "id": "cmakxr7db000600hwodr855lo",
@@ -144,11 +148,12 @@
     "products": [
       "CA-217A PLUS（四线）",
       "CA-217A-D（三线）",
+      "CA-217A",
       "GTYQ-CA228"
     ],
     "alarm": 15,
     "createdAt": "2025-05-12 10:24:14.317",
-    "updatedAt": "2025-05-12 10:24:14.317"
+    "updatedAt": "2026-05-03 07:59:43.107"
   },
   {
     "id": "cmakxr84h000a00hwgvnlmkk0",
@@ -156,13 +161,14 @@
     "fullName": "济南瑞安电子有限公司",
     "products": [
       "RBT-6000-ZLG",
+      "RBT-6000-ZLGM/A",
       "GT-RBTZL",
       "GT-RZLED08A",
       "GT-RZLED09"
     ],
     "alarm": 25,
     "createdAt": "2025-05-12 10:24:14.562",
-    "updatedAt": "2025-05-12 10:24:14.562"
+    "updatedAt": "2025-10-17 06:13:48.892"
   },
   {
     "id": "cmakxr8bz000b00hw1z8r3g53",
@@ -198,7 +204,7 @@
     ],
     "alarm": 25,
     "createdAt": "2025-05-12 10:24:15.317",
-    "updatedAt": "2025-05-12 10:24:15.317"
+    "updatedAt": "2025-11-27 11:52:22.343"
   },
   {
     "id": "cmakxr8w7000e00hww0x9vmqk",
@@ -331,11 +337,12 @@
     "shortName": "山东多瑞电子",
     "fullName": "山东多瑞电子科技有限公司",
     "products": [
-      "DR-600"
+      "DR-600",
+      "DR-600-B"
     ],
     "alarm": 20,
     "createdAt": "2025-05-12 10:24:18.021",
-    "updatedAt": "2025-05-12 10:24:18.021"
+    "updatedAt": "2025-11-22 02:03:19.695"
   },
   {
     "id": "cmakxraza000p00hwkjsmtoem",
@@ -387,22 +394,24 @@
     "shortName": "济南顺安",
     "fullName": "济南顺安电子科技有限公司",
     "products": [
-      "GQ-SAT6000"
+      "GQ-SAT6000",
+      "SA-2003"
     ],
     "alarm": 25,
     "createdAt": "2025-05-12 10:24:19.232",
-    "updatedAt": "2025-05-12 10:24:19.232"
+    "updatedAt": "2025-07-10 13:03:15.792"
   },
   {
     "id": "cmakxrbx0000u00hwc287jorx",
     "shortName": "常州艾科思",
     "fullName": "艾科思电子科技(常州)有限公司",
     "products": [
-      "GND-20"
+      "GND-20",
+      "GT-GND20"
     ],
     "alarm": 20,
     "createdAt": "2025-05-12 10:24:19.477",
-    "updatedAt": "2025-05-12 10:24:19.477"
+    "updatedAt": "2025-11-14 14:25:39.717"
   },
   {
     "id": "cmakxrc44000v00hw2wrpcuxk",
@@ -593,9 +602,9 @@
     "products": [
       "GTY-SF3000"
     ],
-    "alarm": 25,
+    "alarm": 20,
     "createdAt": "2025-05-12 10:24:23.611",
-    "updatedAt": "2025-05-12 10:24:23.611"
+    "updatedAt": "2026-01-03 07:04:59.945"
   },
   {
     "id": "cmakxrfam001c00hwoahn8c1a",
@@ -607,5 +616,104 @@
     "alarm": 20,
     "createdAt": "2025-05-12 10:24:23.855",
     "updatedAt": "2025-05-12 10:24:23.855"
+  },
+  {
+    "id": "O3kCuqkV7DB2Pq9ZXE2JO",
+    "shortName": "徐州全瑞",
+    "fullName": "徐州全瑞电子科技有限公司",
+    "products": [
+      "QRC1000"
+    ],
+    "alarm": 25,
+    "createdAt": "2025-06-17 04:24:28.292",
+    "updatedAt": "2025-06-17 04:24:28.292"
+  },
+  {
+    "id": "pWMtrOwu5HQp0takumaZv",
+    "shortName": "常州佰铂利",
+    "fullName": "常州佰铂利电子科技有限公司",
+    "products": [
+      "GT-BL90"
+    ],
+    "alarm": 25,
+    "createdAt": "2025-07-02 11:42:41.903",
+    "updatedAt": "2025-07-02 11:42:41.903"
+  },
+  {
+    "id": "AKTae4RrhZuNYl-Jz_J0X",
+    "shortName": "蚌埠依爱",
+    "fullName": "蚌埠依爱消防电子有限责任公司",
+    "products": [
+      "JTQ-CHM-EI6810，JT-EI8810"
+    ],
+    "alarm": 10,
+    "createdAt": "2025-07-03 13:01:31.029",
+    "updatedAt": "2025-07-03 13:01:31.029"
+  },
+  {
+    "id": "8ZLpz34D75XaHioz5MrM5",
+    "shortName": "郑州汇瑞埔",
+    "fullName": "郑州汇瑞埔电子技术有限公司",
+    "products": [
+      "HRP-T1000"
+    ],
+    "alarm": 25,
+    "createdAt": "2025-08-28 14:14:04.369",
+    "updatedAt": "2025-08-28 14:14:04.369"
+  },
+  {
+    "id": "3bjzHgbKl_8h4X4aBrUfN",
+    "shortName": "山东奔虎",
+    "fullName": "山东奔虎智能科技有限公司",
+    "products": [
+      "GT-BHT8000"
+    ],
+    "alarm": 25,
+    "createdAt": "2025-09-09 08:25:37.417",
+    "updatedAt": "2025-09-09 08:25:37.417"
+  },
+  {
+    "id": "lu9kroh4IJPo8re0Hqr4u",
+    "shortName": "济南上优泰",
+    "fullName": "济南上优泰电子科技有限公司",
+    "products": [
+      "SYT-TC"
+    ],
+    "alarm": 25,
+    "createdAt": "2025-09-09 08:46:03.503",
+    "updatedAt": "2025-09-09 08:46:03.503"
+  },
+  {
+    "id": "dmzd0AQDTPolWw1lkKJrN",
+    "shortName": "山东坤安",
+    "fullName": "山东坤安电子科技有限公司",
+    "products": [
+      "GTY-KUN100"
+    ],
+    "alarm": 25,
+    "createdAt": "2025-09-10 07:02:17.813",
+    "updatedAt": "2025-09-10 07:02:17.813"
+  },
+  {
+    "id": "0R2dBGlN5hKTdTyxSH59b",
+    "shortName": "济南大神探",
+    "fullName": "济南大神探电子科技有限公司",
+    "products": [
+      "GTYQ-DST-200"
+    ],
+    "alarm": 20,
+    "createdAt": "2025-11-30 23:54:18.222",
+    "updatedAt": "2025-11-30 23:54:18.222"
+  },
+  {
+    "id": "ju4Wk7jaVCtJY00431vAg",
+    "shortName": "深圳元特",
+    "fullName": "深圳市元特科技有限公司",
+    "products": [
+      "YT-95H-EX"
+    ],
+    "alarm": 20,
+    "createdAt": "2026-04-28 11:08:57.326",
+    "updatedAt": "2026-04-28 11:08:57.326"
   }
 ]

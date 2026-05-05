@@ -1,27 +1,38 @@
+import { getIronSession } from 'iron-session';
 import { NextRequest, NextResponse } from 'next/server';
+import type { SessionData } from '@/lib/auth';
+import { sessionOptions } from '@/lib/auth';
 
-export function middleware(request: NextRequest) {
-  console.log('🚀 MIDDLEWARE TRIGGERED for:', request.nextUrl.pathname);
-  
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
   // 允许访问登录页面和认证API
   if (pathname === '/login' || pathname.startsWith('/api/auth/')) {
-    console.log('✅ Allowing public path:', pathname);
     return NextResponse.next();
   }
 
-  // 简单检查：如果没有 session cookie，重定向到登录页
-  const sessionCookie = request.cookies.get('auth-session');
-  
-  if (!sessionCookie) {
-    console.log('🚫 No session cookie, redirecting to login');
+  const response = NextResponse.next();
+
+  try {
+    const session = await getIronSession<SessionData>(request, response, sessionOptions);
+    if (session.isAuthenticated === true) {
+      return response;
+    }
+  } catch (error) {
+    console.error('Session verification error:', error);
+  }
+
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json(
+      { error: '未登录或登录已过期' },
+      { status: 401 }
+    );
+  }
+
+  {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
-
-  console.log('✅ Has session cookie, allowing access');
-  return NextResponse.next();
 }
 
 export const config = {
