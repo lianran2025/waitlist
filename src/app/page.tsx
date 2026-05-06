@@ -433,7 +433,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex flex-col items-center justify-center p-6 relative">
       <LogoutButton />
       <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl transition-shadow duration-300 animate-fade-in-up hover:shadow-2xl">
-        <h2 className="text-3xl font-bold mb-8 text-gray-800">证书生成工具</h2>
+        <h2 className="text-3xl font-bold mb-8 text-gray-800">越鑫证书制作</h2>
         <form id="generateForm" className="space-y-6" onSubmit={handleSubmit}>
           {/* 基本信息组 */}
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-6 shadow-sm no-transform-for-datepicker transition-shadow duration-300 hover:shadow-lg animate-fade-in-up">
@@ -525,7 +525,7 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">公司名称</label>
+                <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">制造商名称</label>
                 <Select
                   inputId="alert_factory"
                   name="alert_factory"
@@ -534,7 +534,7 @@ export default function HomePage() {
                   onChange={handleCompanyChange}
                   options={companies.map(c => ({ label: c.fullname, value: c.fullname }))}
                   classNamePrefix="react-select"
-                  placeholder="请输入或搜索公司名称..."
+                  placeholder="选择制造商"
                   isSearchable
                   isClearable
                   styles={{
@@ -554,7 +554,7 @@ export default function HomePage() {
                 {companyError && <p className="mt-1 text-sm text-red-500">{companyError}</p>}
               </div>
               <div>
-                <label htmlFor="alert_type" className="block text-sm font-medium text-gray-700 mb-2">品牌型号</label>
+                <label htmlFor="alert_type" className="block text-sm font-medium text-gray-700 mb-2">型号</label>
                 <Select
                   inputId="alert_type"
                   name="alert_type"
@@ -563,7 +563,7 @@ export default function HomePage() {
                   onChange={handleModelChange}
                   options={models.map(m => ({ label: m, value: m }))}
                   classNamePrefix="react-select"
-                  placeholder="请选择品牌型号..."
+                  placeholder="选择型号"
                   isSearchable={true}
                   styles={{
                     control: (base) => ({ 
@@ -712,7 +712,6 @@ export default function HomePage() {
                   required 
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
                   placeholder="如: 20.0" 
-                  defaultValue="20.0" 
                 />
               </div>
               <div>
@@ -726,7 +725,6 @@ export default function HomePage() {
                   max={100} 
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
                   placeholder="如: 50" 
-                  defaultValue="50" 
                 />
               </div>
             </div>
@@ -954,8 +952,8 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
       color: "from-green-50 to-emerald-50",
       borderColor: "border-green-200",
       fields: {
-        alert_factory: "公司名称",
-        alert_type: "品牌型号",
+        alert_factory: "制造商名称",
+        alert_type: "型号",
         liangcheng: "量程",
       }
     },
