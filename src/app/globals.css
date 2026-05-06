@@ -207,18 +207,18 @@ body {
 @keyframes fade-in-up {
   0% {
     opacity: 0;
-    transform: translateY(30px) scale(0.95);
+    transform: translateY(12px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes slide-in-left {
   0% {
     opacity: 0;
-    transform: translateX(-30px);
+    transform: translateX(-12px);
   }
   100% {
     opacity: 1;
@@ -229,7 +229,7 @@ body {
 @keyframes slide-in-right {
   0% {
     opacity: 0;
-    transform: translateX(30px);
+    transform: translateX(12px);
   }
   100% {
     opacity: 1;
@@ -256,19 +256,25 @@ body {
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
+  animation: fade-in-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  backface-visibility: hidden;
+  will-change: opacity, transform;
 }
 
 .animate-slide-in-left {
-  animation: slide-in-left 0.5s ease-out forwards;
+  animation: slide-in-left 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  backface-visibility: hidden;
+  will-change: opacity, transform;
 }
 
 .animate-slide-in-right {
-  animation: slide-in-right 0.5s ease-out forwards;
+  animation: slide-in-right 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  backface-visibility: hidden;
+  will-change: opacity, transform;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.5s ease-out forwards;
+  animation: fade-in 0.35s ease-out both;
 }
 
 .animate-gradient-shift {
@@ -289,8 +295,24 @@ body {
   animation-delay: 0.2s;
 }
 
+.delay-250 {
+  animation-delay: 0.25s;
+}
+
 .delay-300 {
   animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-fade-in,
+  .animate-gradient-shift {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* 输入框焦点特效 */

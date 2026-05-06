@@ -430,13 +430,13 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex flex-col items-center justify-center p-6 relative animate-gradient-shift">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex flex-col items-center justify-center p-6 relative">
       <LogoutButton />
-      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl transform transition-all duration-700 animate-fade-in-up hover:shadow-2xl">
+      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl transition-shadow duration-300 animate-fade-in-up hover:shadow-2xl">
         <h2 className="text-3xl font-bold mb-8 text-gray-800">证书生成工具</h2>
         <form id="generateForm" className="space-y-6" onSubmit={handleSubmit}>
           {/* 基本信息组 */}
-          <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-6 shadow-sm no-transform-for-datepicker transition-all duration-300 hover:shadow-lg animate-slide-in-left">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-6 shadow-sm no-transform-for-datepicker transition-shadow duration-300 hover:shadow-lg animate-fade-in-up">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -514,7 +514,7 @@ export default function HomePage() {
           </div>
 
           {/* 设备信息组 */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-right">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-100">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -523,7 +523,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-lg font-semibold text-gray-800">设备信息</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">公司名称</label>
                 <Select
@@ -580,11 +580,23 @@ export default function HomePage() {
                   menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                 />
               </div>
+              <div>
+                <label htmlFor="liangcheng" className="block text-sm font-medium text-gray-700 mb-2">量程（%LEL）</label>
+                <input
+                  type="text"
+                  id="liangcheng"
+                  name="liangcheng"
+                  value={selectedRange}
+                  readOnly
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-700 bg-gray-50 cursor-not-allowed"
+                  placeholder="选择公司后自动加载"
+                />
+              </div>
             </div>
           </div>
 
           {/* 探头配置组 */}
-          <div className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-left delay-100">
+          <div className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-150">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -634,7 +646,7 @@ export default function HomePage() {
           </div>
 
           {/* 分布配置组 */}
-          <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-right delay-150">
+          <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-200">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -680,7 +692,7 @@ export default function HomePage() {
           </div>
 
           {/* 环境参数组 */}
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6 shadow-sm transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 animate-slide-in-left delay-200">
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-250">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -721,7 +733,7 @@ export default function HomePage() {
           </div>
 
           {/* 高级选项折叠区域 */}
-          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-xl shadow-sm animate-fade-in delay-250">
+          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-xl shadow-sm animate-fade-in-up delay-300">
             {/* 高级选项标题栏 */}
             <div 
               className="p-4 cursor-pointer hover:bg-blue-50 transition-colors rounded-xl"
@@ -944,6 +956,7 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
       fields: {
         alert_factory: "公司名称",
         alert_type: "品牌型号",
+        liangcheng: "量程",
       }
     },
     {
@@ -1004,7 +1017,11 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(group.fields).map(([key, label]) => {
                   const value = data?.[key];
-                  const displayValue = value || "-";
+                  const displayValue = value
+                    ? key === 'liangcheng'
+                      ? `${value} %LEL`
+                      : value
+                    : "-";
                   return (
                     <div key={key} className="bg-white bg-opacity-70 rounded-lg p-4 border border-white border-opacity-50">
                       <div className="text-sm font-medium text-gray-600 mb-2">{label}</div>

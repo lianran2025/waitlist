@@ -19,7 +19,8 @@ export async function GET() {
       fullname: company.fullName,
       list: company.products,
       alarm: company.alarm,
-      range: company.range
+      range: company.range,
+      rangeConfirmed: company.rangeConfirmed
     }))
 
     const response = NextResponse.json(formattedCompanies)

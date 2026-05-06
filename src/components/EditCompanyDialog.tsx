@@ -15,7 +15,8 @@ export function EditCompanyDialog({ company, isOpen, onClose, onUpdate }: EditCo
     fullName: company.fullName,
     products: company.products.join('\n'),
     alarm: company.alarm,
-    range: company.range || '0-100'
+    range: company.range || '0-100',
+    rangeConfirmed: company.rangeConfirmed ?? false
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,7 +122,24 @@ export function EditCompanyDialog({ company, isOpen, onClose, onUpdate }: EditCo
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+              {!formData.rangeConfirmed && (
+                <p className="mt-2 text-sm text-amber-700">
+                  当前量程尚未确认。如果这个值是设备真实量程，请勾选下方确认项；否则请先修改。
+                </p>
+              )}
             </div>
+
+            <label className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+              <input
+                type="checkbox"
+                checked={formData.rangeConfirmed}
+                onChange={e => setFormData(prev => ({ ...prev, rangeConfirmed: e.target.checked }))}
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-amber-900">
+                我已确认该公司的量程为 {formData.range || '0-100'} %LEL
+              </span>
+            </label>
 
             <div className="flex justify-end gap-3 mt-6">
               <button

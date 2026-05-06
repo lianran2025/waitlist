@@ -10,6 +10,7 @@ export interface Company {
   products: string[]
   alarm: number
   range: string
+  rangeConfirmed: boolean
   createdAt: string
   updatedAt: string
 }
@@ -21,9 +22,10 @@ const COMPANIES_JSON_PATH = path.join(process.cwd(), 'src/data/companies.json')
 function readCompaniesFromFile(): Company[] {
   try {
     const data = readFileSync(COMPANIES_JSON_PATH, 'utf-8')
-    return JSON.parse(data).map((company: Company & { range?: string }) => ({
+    return JSON.parse(data).map((company: Company & { range?: string; rangeConfirmed?: boolean }) => ({
       ...company,
-      range: company.range || '0-100'
+      range: company.range || '0-100',
+      rangeConfirmed: company.rangeConfirmed ?? false
     }))
   } catch (error) {
     console.error('读取公司数据失败:', error)
@@ -121,6 +123,7 @@ export const companiesJson = {
       products: string[]
       alarm: number
       range?: string
+      rangeConfirmed?: boolean
     }
   }): Company => {
     const companies = readCompaniesFromFile()
@@ -133,6 +136,7 @@ export const companiesJson = {
       products: options.data.products,
       alarm: options.data.alarm,
       range: options.data.range || '0-100',
+      rangeConfirmed: options.data.rangeConfirmed ?? false,
       createdAt: now,
       updatedAt: now
     }
@@ -152,6 +156,7 @@ export const companiesJson = {
       products?: string[]
       alarm?: number
       range?: string
+      rangeConfirmed?: boolean
     }
   }): Company => {
     const companies = readCompaniesFromFile()

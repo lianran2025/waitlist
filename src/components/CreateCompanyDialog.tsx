@@ -22,7 +22,8 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
     fullName: '',
     products: '',
     alarm: '',
-    range: '0-100'
+    range: '0-100',
+    rangeConfirmed: false
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -71,6 +72,7 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
           ...formData,
           alarm: Number(formData.alarm),
           range: formData.range.trim(),
+          rangeConfirmed: formData.rangeConfirmed,
           products: formData.products.split(',').map(p => p.trim()).filter(Boolean)
         }),
       })
@@ -86,7 +88,8 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
         fullName: '',
         products: '',
         alarm: '',
-        range: '0-100'
+        range: '0-100',
+        rangeConfirmed: false
       })
       setErrors({})
     } catch (error) {
@@ -103,7 +106,8 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
       fullName: '',
       products: '',
       alarm: '',
-      range: '0-100'
+      range: '0-100',
+      rangeConfirmed: false
     })
     setErrors({})
     onClose()
@@ -252,7 +256,24 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
               {errors.range && (
                 <p className="mt-1 text-sm text-red-600">{errors.range}</p>
               )}
+              {!formData.rangeConfirmed && (
+                <p className="mt-2 text-sm text-amber-700">
+                  0-100 是系统默认值。创建前请确认真实量程，或创建后在公司列表中继续标记为待确认。
+                </p>
+              )}
             </div>
+
+            <label className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+              <input
+                type="checkbox"
+                checked={formData.rangeConfirmed}
+                onChange={e => setFormData(prev => ({ ...prev, rangeConfirmed: e.target.checked }))}
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-amber-900">
+                我已确认该公司的量程为 {formData.range || '0-100'} %LEL
+              </span>
+            </label>
 
             <div className="mt-8 flex justify-end space-x-3">
               <button

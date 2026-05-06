@@ -11,7 +11,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { shortName, fullName, products, alarm, range } = body
+    const { shortName, fullName, products, alarm, range, rangeConfirmed } = body
 
     const company = companiesJson.update({
       where: {
@@ -22,7 +22,8 @@ export async function PUT(
         fullName,
         products,
         alarm,
-        range
+        range,
+        rangeConfirmed
       }
     })
 

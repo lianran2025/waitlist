@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { CompanyCard } from '@/components/CompanyCard'
-import { PlusIcon, HomeIcon } from '@heroicons/react/24/outline'
+import { ExclamationTriangleIcon, PlusIcon, HomeIcon } from '@heroicons/react/24/outline'
 import { CreateCompanyDialog } from '@/components/CreateCompanyDialog'
 
 export default function CompaniesPage() {
@@ -14,6 +14,7 @@ export default function CompaniesPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const unconfirmedRangeCount = companies.filter(company => !company.rangeConfirmed).length
 
   const fetchCompanies = async () => {
     try {
@@ -88,6 +89,21 @@ export default function CompaniesPage() {
             返回证书生成
           </Link>
         </div>
+        {unconfirmedRangeCount > 0 && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <div className="flex gap-3">
+              <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 flex-none" />
+              <div>
+                <p className="font-medium">
+                  有 {unconfirmedRangeCount} 家公司的量程仍是默认值或尚未确认
+                </p>
+                <p className="mt-1 text-sm">
+                  默认量程为 0-100 %LEL，仅用于临时占位。请逐一打开“编辑”，修改或确认真实量程后勾选确认项。
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {/* 搜索框 */}
         <div className="mb-8">
           <input

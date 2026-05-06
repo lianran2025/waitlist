@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { EditCompanyDialog } from './EditCompanyDialog'
-import { TrashIcon } from '@heroicons/react/24/outline'
+import { ExclamationTriangleIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Dialog } from '@headlessui/react'
 
 export interface Company {
@@ -10,6 +10,7 @@ export interface Company {
   products: string[]
   alarm: number
   range?: string
+  rangeConfirmed?: boolean
 }
 
 interface CompanyCardProps {
@@ -75,7 +76,26 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
           <div>
             <span className="text-sm font-medium text-gray-500">量程：</span>
             <span className="text-sm text-gray-900">{company.range || '0-100'} %LEL</span>
+            {company.rangeConfirmed ? (
+              <span className="ml-2 inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                已确认
+              </span>
+            ) : (
+              <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20">
+                默认值待确认
+              </span>
+            )}
           </div>
+          {!company.rangeConfirmed && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <div className="flex gap-2">
+                <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 flex-none" />
+                <p>
+                  当前量程是系统默认值，仅供临时使用。请尽快编辑公司信息，确认或修改真实量程。
+                </p>
+              </div>
+            </div>
+          )}
           <div>
             <span className="text-sm font-medium text-gray-500">产品列表：</span>
             <div className="mt-1 flex flex-wrap gap-2">
