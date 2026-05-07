@@ -421,9 +421,10 @@ export default function HomePage() {
       }
       
     } catch (error: any) {
-      setErrorModal(error.message || "生成证书失败")
+      const message = error.message || "生成证书失败";
+      setErrorModal(message)
       setProgress(0)
-      setProgressText('')
+      setProgressText(message)
     } finally {
       setLoading(false)
     }

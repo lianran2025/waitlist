@@ -8,6 +8,29 @@ import FormData from 'form-data'
 import { companiesJson } from '@/lib/companies-json'
 import { calibrationRecordsJson } from '@/lib/calibration-records-json'
 
+function getBackendErrorMessage(error: any, action: string): string {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const backendMessage = error.response?.data?.error || error.response?.data?.message;
+
+    if (error.code === 'ECONNABORTED') {
+      return `Windows 后端${action}超时，请检查 Flask 终端是否卡住，必要时重启 Flask 后再试`;
+    }
+
+    if (error.code === 'ECONNREFUSED') {
+      return `无法连接 Windows 后端，请确认 Flask 已启动并监听 ${process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000'}`;
+    }
+
+    if (status) {
+      return `Windows 后端${action}失败（HTTP ${status}）${backendMessage ? `：${backendMessage}` : ''}`;
+    }
+
+    return `Windows 后端${action}失败：${error.message}`;
+  }
+
+  return `Windows 后端${action}失败：${error?.message || String(error)}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -268,6 +291,21 @@ export async function POST(req: NextRequest) {
 
     // 2. 上传所有 docx 到 Windows 服务器
     const winApi = process.env.WINDOWS_API_URL || 'http://127.0.0.1:5000';
+
+    try {
+      console.log(`[证书生成] 检查 Windows 后端健康状态: ${winApi}/health`);
+      await axios.get(`${winApi}/health`, { timeout: 5000 });
+    } catch (error: any) {
+      const message = getBackendErrorMessage(error, '健康检查');
+      console.error('[证书生成] Windows 后端健康检查失败:', message);
+      return new Response(JSON.stringify({
+        message,
+      }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const nodeForm = new FormData();
     docxBuffers.forEach(doc => {
       nodeForm.append('files', doc.buffer, { filename: doc.name });
@@ -275,12 +313,24 @@ export async function POST(req: NextRequest) {
     const totalBytes = docxBuffers.reduce((sum, doc) => sum + doc.buffer.length, 0);
     console.log(`[证书生成] DOCX 全部生成完成，开始上传到 ${winApi}/upload，文件数=${docxBuffers.length}，总大小=${totalBytes} bytes`);
 
-    const uploadResp = await axios.post(`${winApi}/upload`, nodeForm, {
-      headers: nodeForm.getHeaders(),
-      maxBodyLength: Infinity,
-      maxContentLength: Infinity,
-      timeout: 120000,
-    });
+    let uploadResp;
+    try {
+      uploadResp = await axios.post(`${winApi}/upload`, nodeForm, {
+        headers: nodeForm.getHeaders(),
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        timeout: 45000,
+      });
+    } catch (error: any) {
+      const message = getBackendErrorMessage(error, '上传');
+      console.error('[证书生成] 上传到 Windows 后端失败:', message);
+      return new Response(JSON.stringify({
+        message,
+      }), {
+        status: 504,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
     console.log('[证书生成] 上传完成，Windows 后端返回:', uploadResp.data);
     const taskId = uploadResp.data.task_id;
 

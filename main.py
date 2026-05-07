@@ -438,4 +438,4 @@ if __name__ == '__main__':
     print(f"服务地址: http://{host}:{port}")
     print(f"健康检查: http://{host}:{port}/health")
     print("=" * 50)
-    app.run(host=host, port=port, debug=False)
+    app.run(host=host, port=port, debug=False, threaded=True)
