@@ -22,6 +22,27 @@ os.makedirs(PDF_FOLDER, exist_ok=True)
 os.makedirs(MERGED_FOLDER, exist_ok=True)
 os.makedirs(COMPLETE_FOLDER, exist_ok=True)
 
+def normalize_zip_filename(filename, default_filename):
+    safe_filename = filename or default_filename
+    safe_filename = safe_filename.replace('\\', '/').split('/')[-1]
+    if not safe_filename.lower().endswith('.zip'):
+        safe_filename = f'{safe_filename}.zip'
+    return safe_filename
+
+def add_docx_files_to_zip(zipf, docx_folder):
+    file_count = 0
+    if not os.path.exists(docx_folder):
+        return file_count
+
+    for file in sorted(os.listdir(docx_folder)):
+        if file.endswith('.docx') and not file.startswith('~$'):
+            file_path = os.path.join(docx_folder, file)
+            archive_path = f"原始记录/{file}" if '原始记录' in file else file
+            zipf.write(file_path, archive_path)
+            file_count += 1
+
+    return file_count
+
 # 全局任务进度字典
 task_status = {}
 
@@ -251,10 +272,7 @@ def merge_pdfs(task_id):
 def package_complete_files(task_id):
     try:
         data = request.get_json() or {}
-        filename = data.get('filename', f'certificates_{task_id}.zip')
-        
-        # 从文件名中提取文件夹名称（去掉.zip后缀）
-        folder_name = filename.replace('.zip', '') if filename.endswith('.zip') else filename
+        filename = normalize_zip_filename(data.get('filename'), f'certificates_{task_id}.zip')
         
         # 获取任务相关的文件路径
         docx_folder = os.path.join(UPLOAD_FOLDER, task_id)
@@ -262,10 +280,6 @@ def package_complete_files(task_id):
         complete_zip_path = os.path.join(COMPLETE_FOLDER, f'{task_id}_{filename}')
         
         log = f"开始生成完整压缩包，任务ID: {task_id}"
-        print(log)
-        if task_id in task_status and 'logs' in task_status[task_id]:
-            task_status[task_id]['logs'].append(log)
-        log = f"文件夹名称: {folder_name}"
         print(log)
         if task_id in task_status and 'logs' in task_status[task_id]:
             task_status[task_id]['logs'].append(log)
@@ -288,29 +302,21 @@ def package_complete_files(task_id):
         if not os.path.exists(merged_pdf):
             return jsonify({'error': '合并PDF文件不存在'}), 404
         
-        # 创建完整压缩包，所有文件都放在指定文件夹内
+        # 创建完整压缩包：证书放根目录，原始记录放到单独文件夹
         file_count = 0
         with zipfile.ZipFile(complete_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            # 添加所有docx文件到文件夹内
-            if os.path.exists(docx_folder):
-                for file in os.listdir(docx_folder):
-                    if file.endswith('.docx') and not file.startswith('~$'):
-                        file_path = os.path.join(docx_folder, file)
-                        # 将文件放在文件夹内：文件夹名/文件名
-                        archive_path = f"{folder_name}/{file}"
-                        zipf.write(file_path, archive_path)
-                        log = f"添加docx文件到文件夹: {archive_path}"
-                        print(log)
-                        if task_id in task_status and 'logs' in task_status[task_id]:
-                            task_status[task_id]['logs'].append(log)
-                        file_count += 1
+            docx_count = add_docx_files_to_zip(zipf, docx_folder)
+            file_count += docx_count
+            log = f"添加docx文件数量: {docx_count}，原始记录已放入 原始记录/ 文件夹"
+            print(log)
+            if task_id in task_status and 'logs' in task_status[task_id]:
+                task_status[task_id]['logs'].append(log)
             
-            # 添加合并后的PDF文件到文件夹内
+            # 添加合并后的PDF文件到根目录
             if os.path.exists(merged_pdf):
-                # 将PDF文件放在文件夹内：文件夹名/合并证书.pdf
-                archive_path = f"{folder_name}/合并证书.pdf"
+                archive_path = "合并证书.pdf"
                 zipf.write(merged_pdf, archive_path)
-                log = f"添加合并PDF文件到文件夹: {archive_path}"
+                log = f"添加合并PDF文件: {archive_path}"
                 print(log)
                 if task_id in task_status and 'logs' in task_status[task_id]:
                     task_status[task_id]['logs'].append(log)
@@ -320,13 +326,12 @@ def package_complete_files(task_id):
         if task_id in task_status:
             task_status[task_id]['package_done'] = True
             task_status[task_id]['complete_zip_path'] = complete_zip_path
-            task_status[task_id]['folder_name'] = folder_name
         
         log = f"完整压缩包生成成功: {complete_zip_path}"
         print(log)
         if task_id in task_status and 'logs' in task_status[task_id]:
             task_status[task_id]['logs'].append(log)
-        log = f"解压后将创建文件夹: {folder_name}"
+        log = "原始记录已放入压缩包内的 原始记录/ 文件夹"
         print(log)
         if task_id in task_status and 'logs' in task_status[task_id]:
             task_status[task_id]['logs'].append(log)
@@ -339,7 +344,6 @@ def package_complete_files(task_id):
             'status': 'success',
             'message': '完整压缩包生成成功',
             'filename': filename,
-            'folder_name': folder_name,
             'file_count': file_count
         })
         
@@ -364,12 +368,25 @@ def download_file(task_id, filetype):
             shutil.make_archive(file_path, 'zip', file_path)
             file_path += '.zip'
         elif filetype == 'docx':
-            file_path = os.path.join(UPLOAD_FOLDER, task_id)
-            shutil.make_archive(file_path, 'zip', file_path)
-            file_path += '.zip'
+            filename = normalize_zip_filename(request.args.get('filename'), f'certificates_{task_id}.zip')
+            docx_folder = os.path.join(UPLOAD_FOLDER, task_id)
+            file_path = os.path.join(UPLOAD_FOLDER, f'{task_id}_{filename}')
+
+            if not os.path.exists(docx_folder):
+                return jsonify({'error': 'docx文件夹不存在'}), 404
+
+            with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                add_docx_files_to_zip(zipf, docx_folder)
+
+            return send_file(
+                file_path,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/zip'
+            )
         elif filetype == 'complete':
             # 新增：下载完整压缩包
-            filename = request.args.get('filename', f'certificates_{task_id}.zip')
+            filename = normalize_zip_filename(request.args.get('filename'), f'certificates_{task_id}.zip')
             file_path = os.path.join(COMPLETE_FOLDER, f'{task_id}_{filename}')
             
             if not os.path.exists(file_path):

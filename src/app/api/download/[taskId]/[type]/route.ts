@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+function encodeRFC5987ValueChars(value: string): string {
+  return encodeURIComponent(value)
+    .replace(/['()]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
+    .replace(/\*/g, '%2A')
+}
+
+function createContentDisposition(filename: string): string {
+  const fallback = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '_')
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeRFC5987ValueChars(filename)}`
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { taskId: string, type: string } }
@@ -64,12 +75,10 @@ export async function GET(
       }
     })
     
-    // 如果有Content-Disposition头，保留它
-    if (contentDisposition) {
+    if (filename) {
+      proxyResponse.headers.set('Content-Disposition', createContentDisposition(filename))
+    } else if (contentDisposition) {
       proxyResponse.headers.set('Content-Disposition', contentDisposition)
-    } else if (filename) {
-      // 如果没有Content-Disposition但有filename参数，创建一个
-      proxyResponse.headers.set('Content-Disposition', `attachment; filename="${filename}"`)
     }
     
     console.log(`[下载代理] 代理响应已创建`)

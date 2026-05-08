@@ -135,6 +135,31 @@ export async function POST(req: NextRequest) {
       return `ZJYX-${date}${serialNum}`;
     }
 
+    function formatSignedDecimal(value: string | undefined, fallback = '0.0'): string {
+      const rawValue = value || fallback;
+      const numericValue = Number(rawValue);
+
+      if (Number.isNaN(numericValue)) {
+        return rawValue;
+      }
+
+      if (numericValue > 0 && !rawValue.trim().startsWith('+')) {
+        return `+${rawValue}`;
+      }
+
+      return rawValue;
+    }
+
+    function formatIntegerValue(value: string | undefined, fallback: string): string {
+      const numericValue = Number(value || fallback);
+
+      if (Number.isNaN(numericValue)) {
+        return value || fallback;
+      }
+
+      return String(Math.round(numericValue));
+    }
+
     function createAllAlertsNumList(sections: string[], sectionsNum: number[]): { place: string, num: string }[] {
       const allAlertsNum: { place: string, num: string }[] = [];
       for (let i = 0; i < sections.length; i++) {
@@ -242,10 +267,23 @@ export async function POST(req: NextRequest) {
       const recordTemplatePath = path.join(process.cwd(), 'templates', 'new_templates', 'jilu.docx');
       const alarmActionValue = calibrationRecord?.alarm_action_value || String(alarmValue);
       const repeatabilityValue = calibrationRecord?.repeatability || '0.4';
-      const responseTimeAvgValue = calibrationRecord?.response_time_avg || '15.4';
+      const responseTime1Value = formatIntegerValue(calibrationRecord?.response_time_1, '15');
+      const responseTime2Value = formatIntegerValue(calibrationRecord?.response_time_2, '15');
+      const responseTime3Value = formatIntegerValue(calibrationRecord?.response_time_3, '15');
+      const responseTimeAvgValue = formatIntegerValue(calibrationRecord?.response_time_avg, '15');
 
       const data = {
         ...(calibrationRecord || {}),
+        indication_10_error: formatSignedDecimal(calibrationRecord?.indication_10_error),
+        indication_40_error: formatSignedDecimal(calibrationRecord?.indication_40_error),
+        indication_60_error: formatSignedDecimal(calibrationRecord?.indication_60_error),
+        certificate_indication_10_error: formatSignedDecimal(calibrationRecord?.certificate_indication_10_error),
+        certificate_indication_40_error: formatSignedDecimal(calibrationRecord?.certificate_indication_40_error),
+        certificate_indication_60_error: formatSignedDecimal(calibrationRecord?.certificate_indication_60_error),
+        response_time_1: responseTime1Value,
+        response_time_2: responseTime2Value,
+        response_time_3: responseTime3Value,
+        response_time_avg: responseTimeAvgValue,
         file_num: fileNum,
         company_name: companyName,
         alert_type: alertType,

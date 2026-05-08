@@ -296,7 +296,7 @@ export default function HomePage() {
             
             setCompleteZipUrl(completeUrl);
             setPdfUrl(`${baseUrl}/${taskId}/merged`);
-            setDownloadUrl(`${baseUrl}/${taskId}/docx`);
+            setDownloadUrl(`${baseUrl}/${taskId}/docx?filename=${encodedFileName}`);
             
             setZipFileName(zipFileName);
           } else if (data.status === 'error') {
