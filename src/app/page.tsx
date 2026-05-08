@@ -19,6 +19,7 @@ export default function HomePage() {
   const [pdfUrl, setPdfUrl] = useState("")
   const [completeZipUrl, setCompleteZipUrl] = useState("")
   const [zipFileName, setZipFileName] = useState("")
+  const [companyName, setCompanyName] = useState("")
   const [companies, setCompanies] = useState<any[]>([])
   const [selectedCompany, setSelectedCompany] = useState("")
   const [selectedCompanyOption, setSelectedCompanyOption] = useState<any>(null)
@@ -35,6 +36,7 @@ export default function HomePage() {
   const [errorModal, setErrorModal] = useState("")
   const [zipName, setZipName] = useState('证书.zip')
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const companyNameInputRef = useRef<HTMLInputElement | null>(null);
   const [mergeDone, setMergeDone] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
@@ -449,14 +451,32 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-2">委托单位名称</label>
-                <input 
-                  type="text" 
-                  id="company_name" 
-                  name="company_name" 
-                  required 
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
-                  placeholder="请输入委托单位名称" 
-                />
+                <div className="relative">
+                  <input
+                    ref={companyNameInputRef}
+                    type="text"
+                    id="company_name"
+                    name="company_name"
+                    required
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                    placeholder="请输入委托单位名称"
+                  />
+                  {companyName && (
+                    <button
+                      type="button"
+                      aria-label="清除委托单位名称"
+                      className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => {
+                        setCompanyName("")
+                        companyNameInputRef.current?.focus()
+                      }}
+                    >
+                      <span className="text-xl leading-none">×</span>
+                    </button>
+                  )}
+                </div>
               </div>
               <div>
                 <label htmlFor="gas" className="block text-sm font-medium text-gray-700 mb-2">检测气体</label>
