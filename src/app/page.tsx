@@ -41,8 +41,7 @@ export default function HomePage() {
   const [errorCount, setErrorCount] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [taskCompleted, setTaskCompleted] = useState(false);
-  const [convertToPdf, setConvertToPdf] = useState(false); // 新增：PDF转换选项
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false); // 高级选项折叠状态
+  const convertToPdf = false; // PDF转换选项暂时隐藏，默认仅生成DOCX
 
   // 添加日志函数
   const addLog = (message: string) => {
@@ -652,18 +651,7 @@ export default function HomePage() {
                   defaultValue="1" 
                 />
               </div>
-              <div>
-                <label htmlFor="problem_nums" className="block text-sm font-medium text-gray-700 mb-2">故障探头编号（可选）</label>
-                <input
-                  type="text"
-                  id="problem_nums"
-                  name="problem_nums"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-                  placeholder="如: 1-3 5 7-8"
-                />
-              </div>
             </div>
-            <p className="mt-3 text-sm text-gray-500">故障探头编号支持区间和空格分隔，如 1-3 5 7-8</p>
           </div>
 
           {/* 分布配置组 */}
@@ -704,7 +692,7 @@ export default function HomePage() {
             </div>
             <div className="mt-4 space-y-2">
               <p className="text-sm text-gray-500">
-                • 区域为空时：只需填写总数量，生成文件中统一显示为“委托方现场”
+                • 区域为空时：各区域探头数量直接填写总数量
               </p>
               <p className="text-sm text-gray-500">
                 • 区域不为空时：需要与区域数量一一对应，支持空格、逗号分隔
@@ -747,71 +735,6 @@ export default function HomePage() {
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" 
                   placeholder="如: 50" 
                 />
-              </div>
-            </div>
-          </div>
-
-          {/* 高级选项折叠区域 */}
-          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-xl shadow-sm animate-fade-in-up delay-300">
-            {/* 高级选项标题栏 */}
-            <div 
-              className="p-4 cursor-pointer hover:bg-blue-50 transition-colors rounded-xl"
-              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center mr-3">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">高级选项</h3>
-                    <p className="text-sm text-gray-600">文件格式和处理选项</p>
-                  </div>
-                </div>
-                <svg 
-                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showAdvancedOptions ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-
-            {/* 可折叠的内容区域 */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showAdvancedOptions ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="px-6 pb-6">
-                <div className="border-t border-cyan-200 pt-4">
-                  <div className="flex items-start">
-                    <input
-                      id="convertToPdf"
-                      type="checkbox"
-                      checked={convertToPdf}
-                      onChange={(e) => setConvertToPdf(e.target.checked)}
-                      className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded mt-1"
-                    />
-                    <label htmlFor="convertToPdf" className="ml-3 text-sm text-gray-700">
-                      <span className="font-medium text-gray-800">转换为PDF格式并合并</span>
-                      <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 text-amber-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                          </svg>
-                          <span className="text-sm font-medium text-amber-800">
-                            勾选后将生成PDF文件并合并为一个完整文档
-                          </span>
-                        </div>
-                        <p className="text-xs text-amber-700 mt-1 ml-6">
-                          ⏱️ 处理时间较长，请耐心等待
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -986,7 +909,6 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
       fields: {
         all_nums: "探头总数量",
         start_num: "探头起始编号",
-        problem_nums: "故障探头编号",
       }
     },
     {
