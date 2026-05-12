@@ -704,7 +704,7 @@ export default function HomePage() {
             </div>
             <div className="mt-4 space-y-2">
               <p className="text-sm text-gray-500">
-                • 区域为空时：只需填写总数量，所有探头视为一个整体
+                • 区域为空时：只需填写总数量，生成文件中统一显示为“委托方现场”
               </p>
               <p className="text-sm text-gray-500">
                 • 区域不为空时：需要与区域数量一一对应，支持空格、逗号分隔

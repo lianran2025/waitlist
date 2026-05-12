@@ -8,6 +8,8 @@ import FormData from 'form-data'
 import { companiesJson } from '@/lib/companies-json'
 import { calibrationRecordsJson } from '@/lib/calibration-records-json'
 
+const DEFAULT_ALERT_NUM_PLACE = '委托方现场';
+
 function getBackendErrorMessage(error: any, action: string): string {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
@@ -163,7 +165,7 @@ export async function POST(req: NextRequest) {
     function createAllAlertsNumList(sections: string[], sectionsNum: number[]): { place: string, num: string }[] {
       const allAlertsNum: { place: string, num: string }[] = [];
       for (let i = 0; i < sections.length; i++) {
-        const section = sections[i].trim(); // 去除空白字符
+        const section = sections[i].trim() || DEFAULT_ALERT_NUM_PLACE;
         for (let j = 0; j < Number(sectionsNum[i]); j++) {
           const numStr = returnFormatNum3(Number(j + 1));
           allAlertsNum.push({ place: section, num: numStr });
@@ -254,9 +256,9 @@ export async function POST(req: NextRequest) {
       const itemStart = Date.now();
       const [date_now, date_second] = formatDate(String(date));
       const fileNum = getFileNum(String(date), i, startNum);
-      const alertInfo = allAlertNums[i] || { place: '', num: `未知${returnFormatNum(i + startNum)}` };
+      const alertInfo = allAlertNums[i] || { place: DEFAULT_ALERT_NUM_PLACE, num: `未知${returnFormatNum(i + startNum)}` };
       const alertNum = alertInfo.num;
-      const alertNumPlace = alertInfo.place;
+      const alertNumPlace = alertInfo.place || DEFAULT_ALERT_NUM_PLACE;
       // 判断当前编号是否为故障编号（仅根据文件编号后三位判断）
       const isProblem = problemNums.includes(fileNum.slice(-3));
       const calibrationRecord = calibrationRecordsJson.findRandom();
