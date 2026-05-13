@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
       const alertNumPlace = alertInfo.place || DEFAULT_ALERT_NUM_PLACE;
       // 判断当前编号是否为故障编号（仅根据文件编号后三位判断）
       const isProblem = problemNums.includes(fileNum.slice(-3));
-      const calibrationRecord = calibrationRecordsJson.findRandom();
+      const calibrationRecord = calibrationRecordsJson.findRandomByAlarmThreshold(alarmValue);
 
       const certificateTemplatePath = isProblem
         ? path.join(process.cwd(), 'templates', 'problem.docx')

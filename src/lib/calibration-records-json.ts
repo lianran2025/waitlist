@@ -3,6 +3,7 @@ import path from 'path'
 
 export interface CalibrationRecord {
   id: string
+  alarm_threshold?: number
   alarm_function: string
   alarm_value_1: string
   alarm_value_2: string
@@ -76,5 +77,20 @@ export const calibrationRecordsJson = {
 
     const index = Math.floor(Math.random() * records.length)
     return records[index]
+  },
+
+  findRandomByAlarmThreshold: (alarmThreshold: number): CalibrationRecord | null => {
+    const records = readCalibrationRecordsFromFile()
+    const matchingRecords = records.filter(record => record.alarm_threshold === alarmThreshold)
+    const fallbackRecords = records.filter(record => record.alarm_threshold === 25)
+    const availableRecords = matchingRecords.length > 0
+      ? matchingRecords
+      : fallbackRecords.length > 0
+        ? fallbackRecords
+        : records
+    if (availableRecords.length === 0) return null
+
+    const index = Math.floor(Math.random() * availableRecords.length)
+    return availableRecords[index]
   }
 }
