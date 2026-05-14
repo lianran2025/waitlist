@@ -8,6 +8,12 @@ import Link from 'next/link'
 import LogoutButton from '@/components/LogoutButton'
 import "react-datepicker/dist/react-datepicker.css"
 
+const gasOptions = [
+  { label: "甲烷", value: "甲烷" },
+  { label: "丙烷", value: "丙烷" },
+  { label: "氢气", value: "氢气" }
+]
+
 export default function HomePage() {
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -485,10 +491,7 @@ export default function HomePage() {
                   instanceId="gas-select"
                   value={selectedGasOption}
                   onChange={handleGasChange}
-                  options={[
-                    { label: "甲烷", value: "甲烷" },
-                    { label: "丙烷", value: "丙烷" }
-                  ]}
+                  options={gasOptions}
                   classNamePrefix="react-select"
                   placeholder="请选择检测气体..."
                   isSearchable={false}

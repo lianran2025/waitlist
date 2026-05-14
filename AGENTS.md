@@ -21,9 +21,11 @@ These are the important decisions established during the certificate/original-re
 - `table_refer.docx` is not used in the current generation path.
 - The active company data source is `src/data/companies.json` through `src/lib/companies-json.ts`. Do not assume Prisma is the active company source unless explicitly migrating the project.
 - Company data includes detector range (`range`), shown and edited in the frontend, rendered as `liangcheng`, with `%LEL` as the display unit.
+- Company data includes the detector alarm/pre-alarm threshold (`alarm`), shown and edited in the frontend as `预警阈值`. This value is used during certificate/original-record generation to select matching alarm action measurement data.
 - The active random calibration/original-record data source is `src/data/calibration-records.json` through `src/lib/calibration-records-json.ts`.
-- Random calibration data is selected once per detector. The same selected data group must fill both the certificate and the original record.
+- Random calibration data is selected once per detector after filtering by the selected company's `alarm` threshold. The same selected data group must fill both the certificate and the original record.
 - Runtime generation should not recalculate the calibration table values. `calibration-records.json` stores complete precomputed groups, including raw values, averages, errors, uncertainty, repeatability, response-time average, and certificate-facing display fields.
+- Alarm action measurement data in `calibration-records.json` is grouped by `alarm_threshold`. The supported threshold groups are currently `10`, `15`, `20`, and `25`, with 50 complete calibration records per threshold.
 - Certificate and original-record variables should stay semantically aligned. When a shared value appears in both documents, prefer the same variable name or an explicitly documented compatibility variable.
 - `date_now` is the front-end selected detection date. `date_second` is one day after `date_now`. `date_next` is deprecated and should not be used.
 - `alert_num` is only the detector number, for example `002`. `alert_num_place` is the region/place, for example `客厅`. Do not merge them back into `客厅002` unless the user explicitly changes the rule.
@@ -69,8 +71,8 @@ npx ts-node scripts/import-companies.ts  # Import company data to database
 
 ### Active Data Sources
 - Company management currently uses `src/lib/companies-json.ts`, which reads and writes `src/data/companies.json` directly and exposes a Prisma-like API (`findMany`, `findFirst`, `create`, `update`, `delete`, `findUnique`).
-- Company records include manufacturer short name, full name, equipment model list, alarm action threshold, and detector range (`range`). The detector range is displayed/edited in the company UI and is rendered into templates as `liangcheng`; the display unit is `%LEL`.
-- Calibration/original-record data uses `src/lib/calibration-records-json.ts`, which reads `src/data/calibration-records.json`. Each certificate/original-record pair randomly selects one data group from this file.
+- Company records include manufacturer short name, full name, equipment model list, alarm/pre-alarm threshold (`alarm`), and detector range (`range`). The detector range is displayed/edited in the company UI and is rendered into templates as `liangcheng`; the display unit is `%LEL`.
+- Calibration/original-record data uses `src/lib/calibration-records-json.ts`, which reads `src/data/calibration-records.json`. Each certificate/original-record pair randomly selects one data group from this file after matching the company's `alarm` to the record's `alarm_threshold`.
 - Prisma schema still defines `Waitlist` and `Company`, and `prisma` helpers exist in `src/lib/prisma.ts` and `src/lib/db.ts`, but the active company routes have Prisma imports commented out.
 - When changing company behavior, treat `src/data/companies.json` as the active source of truth unless the task explicitly migrates back to PostgreSQL.
 
@@ -145,11 +147,24 @@ npx ts-node scripts/import-companies.ts  # Import company data to database
 - `table_refer.docx` is only exposed by the template helper route whitelist and is not part of the current certificate/original-record generation path unless code is changed to use it.
 
 ### Calibration Data Rules
-- Calibration data is stored as 50 reusable/random groups in `src/data/calibration-records.json`.
-- Each generated detector randomly selects one calibration group through `calibrationRecordsJson.findRandom()`.
+- Calibration data is stored as reusable/random groups in `src/data/calibration-records.json`.
+- The active file is organized by alarm/pre-alarm threshold through the `alarm_threshold` field.
+- The currently supported threshold groups are `10`, `15`, `20`, and `25`.
+- Each threshold group should contain 50 complete calibration records, for a current total of 200 records.
+- `alarm_threshold` is a numeric JSON field, for example `10`, `15`, `20`, or `25`; do not store it as a string unless the TypeScript contract is intentionally changed.
+- Each generated detector should randomly select one calibration group through `calibrationRecordsJson.findRandomByAlarmThreshold(alarmValue)`, where `alarmValue` comes from the selected company's `alarm` field in `src/data/companies.json`.
+- Do not use the generic `calibrationRecordsJson.findRandom()` path for certificate/original-record generation unless the product rule intentionally changes back to threshold-independent data.
 - The same selected group must fill both `new_normal.docx` and `jilu.docx` so certificate values match the original record.
-- Random selection happens once per detector in `/api/generate-certificates`; do not call `findRandom()` separately for the certificate and the original record.
+- Random selection happens once per detector in `/api/generate-certificates`; do not call a random selection helper separately for the certificate and the original record.
 - Runtime generation does not recalculate calibration values from raw measurements. The JSON group is authoritative and already contains the measured values, averages, errors, repeatability, response-time average, and certificate-facing fields.
+- At runtime, the company lookup flow in `/api/generate-certificates` should:
+  - Read `alert_factory` from the submitted form.
+  - Match it against `src/data/companies.json`, first by full company name and then by the existing fuzzy fallback.
+  - Read the matched company's `alarm` value.
+  - Use that `alarm` value to select calibration records whose `alarm_threshold` is the same number.
+  - Fall back to the default `25` threshold group only when a matching threshold group is missing.
+- Example: if a company card shows `预警阈值: 10`, generated original records should use `alarm_threshold: 10` records, with alarm action measurements around 10 %LEL, not around 25 %LEL.
+- Example: if a company card shows `预警阈值: 20`, generated original records should use `alarm_threshold: 20` records, with alarm action measurements around 20 %LEL.
 - The four generated original-record table areas are:
   - 报警功能及报警动作值
   - 示值误差
@@ -158,8 +173,11 @@ npx ts-node scripts/import-companies.ts  # Import company data to database
 - Current generated values should satisfy JJG 693-2011 combustible gas detector requirements and represent normal detector behavior.
 - Alarm function/action values:
   - Alarm function should render as normal for non-problem probes.
+  - `alarm_threshold` is the company alarm/pre-alarm threshold used to choose the record group. It is selection metadata and normally does not need to be rendered into the Word templates.
   - `alarm_value_1`, `alarm_value_2`, and `alarm_value_3` are the three alarm action measurements in the original record.
   - `alarm_action_value` is the one-decimal average of the three alarm action measurements and is used by both original record and certificate.
+  - `alarm_value_1`, `alarm_value_2`, and `alarm_value_3` should be generated near the corresponding `alarm_threshold`, preserving the previous small random fluctuation style. For example, the 25 group may contain values like `24.2` to `25.0`; the 20 group should contain analogous values like `19.2` to `20.0`; the 15 group should contain analogous values like `14.2` to `15.0`; the 10 group should contain analogous values like `9.2` to `10.0`.
+  - `alarm_action_value` must equal the one-decimal rounded average of `alarm_value_1`, `alarm_value_2`, and `alarm_value_3`. Example: `19.4`, `19.5`, and `19.4` should produce `19.4`.
   - Certificate field `报警动作值` should use `alarm_action_value` with `%LEL` appended.
   - Compatibility variables `dongzuozhi`, `dongzuozhi_with_unit` should mirror `alarm_action_value` for normal probes and render `/` for problem probes.
 - Indication error:
@@ -185,8 +203,16 @@ npx ts-node scripts/import-companies.ts  # Import company data to database
 
 ### Calibration JSON Field Contract
 - Every object in `src/data/calibration-records.json` should include the full field set defined by `CalibrationRecord` in `src/lib/calibration-records-json.ts`.
+- Every object should include `alarm_threshold` so generation can select records by company alarm/pre-alarm threshold.
+- Current required alarm-threshold distribution:
+  - 50 records with `alarm_threshold: 10`
+  - 50 records with `alarm_threshold: 15`
+  - 50 records with `alarm_threshold: 20`
+  - 50 records with `alarm_threshold: 25`
+- If a new company alarm threshold is introduced in `src/data/companies.json`, add a matching `alarm_threshold` group to `src/data/calibration-records.json` before relying on it in production.
+- When adding or regenerating threshold groups, keep each record complete. Do not create partial records that only contain `alarm_value_1`, `alarm_value_2`, `alarm_value_3`, and `alarm_action_value`; the same selected record still feeds the full certificate/original-record data object.
 - Required original-record fields:
-  - `alarm_function`, `alarm_value_1`, `alarm_value_2`, `alarm_value_3`, `alarm_action_value`
+  - `alarm_threshold`, `alarm_function`, `alarm_value_1`, `alarm_value_2`, `alarm_value_3`, `alarm_action_value`
   - `indication_10_value_1`, `indication_10_value_2`, `indication_10_value_3`, `indication_10_avg`, `indication_10_error`, `indication_10_urel`
   - `indication_40_value_1`, `indication_40_value_2`, `indication_40_value_3`, `indication_40_avg`, `indication_40_error`, `indication_40_urel`
   - `indication_60_value_1`, `indication_60_value_2`, `indication_60_value_3`, `indication_60_avg`, `indication_60_error`, `indication_60_urel`
@@ -197,8 +223,10 @@ npx ts-node scripts/import-companies.ts  # Import company data to database
   - `certificate_indication_40_measured`, `certificate_indication_40_error`, `certificate_indication_40_urel`
   - `certificate_indication_60_measured`, `certificate_indication_60_error`, `certificate_indication_60_urel`
 - Keep all numeric values as strings in JSON because docxtemplater renders them directly into Word templates.
+- Exception: keep `alarm_threshold` numeric because it is used for TypeScript-side selection, not direct Word rendering.
 - Preserve one decimal place where the existing templates expect one decimal place.
 - When generating more calibration groups, generate the complete group at once, then store the derived averages/errors/uncertainties in JSON. Avoid leaving any calculation to the Word template.
+- When regenerating alarm-action values from an existing 25-threshold pattern, preserve the same relative offsets around the target threshold. Example transformation from the 25 group to the 20 group: `24.4`, `24.5`, `24.4` becomes `19.4`, `19.5`, `19.4`, and `alarm_action_value` becomes `19.4`.
 - The `certificate_indication_*` fields exist to decouple certificate display formatting from original-record raw fields. If the reference values in `new_normal.docx` change, regenerate/update the certificate error fields so `certificate_indication_*_error = certificate_indication_*_measured - certificate table reference value`.
 
 ### Template Variables

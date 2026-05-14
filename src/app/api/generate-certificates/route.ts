@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     // 根据gas值设置gas_num和REL
     let gas_num: string;
     let REL: string;
+    const qiju = gas === '甲烷' ? '可燃气体检测报警器' : `可燃气体检测报警器（${gas}）`;
     if (gas === '甲烷') {
       gas_num = 'GBW(E)061662';
       REL = '1.5%';
@@ -308,6 +309,7 @@ export async function POST(req: NextRequest) {
         gas: gas,
         gas_num: gas_num,
         REL: REL,
+        qiju,
       };
 
       try {
