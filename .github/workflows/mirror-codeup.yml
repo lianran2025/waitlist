@@ -1,0 +1,31 @@
+name: Mirror to Codeup
+
+on:
+  push:
+  create:
+  delete:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Codeup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CODEUP_SSH_PRIVATE_KEY }}" > ~/.ssh/codeup_sync_key
+          chmod 600 ~/.ssh/codeup_sync_key
+          ssh-keyscan codeup.aliyun.com >> ~/.ssh/known_hosts
+
+      - name: Mirror GitHub repository to Codeup
+        env:
+          CODEUP_REPO_SSH: ${{ secrets.CODEUP_REPO_SSH }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git clone --mirror "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo.git
+          cd repo.git
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/codeup_sync_key -o IdentitiesOnly=yes" git push --mirror "${CODEUP_REPO_SSH}"
