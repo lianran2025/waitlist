@@ -1,11 +1,23 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import type { ComponentType } from "react"
 import Select from 'react-select'
 import DatePicker from 'react-datepicker'
 import { Fragment } from "react"
 import Link from 'next/link'
 import LogoutButton from '@/components/LogoutButton'
+import {
+  ArrowBackIcon,
+  CheckIcon,
+  Cloud3Icon,
+  CpuIcon,
+  DownloadIcon,
+  FileDescriptionIcon,
+  MapPinIcon,
+  SlidersHorizontalIcon,
+  type AnimatedIconProps,
+} from '@/components/icons/AnimatedCertificateIcons'
 import "react-datepicker/dist/react-datepicker.css"
 
 const gasOptions = [
@@ -13,6 +25,24 @@ const gasOptions = [
   { label: "丙烷", value: "丙烷" },
   { label: "氢气", value: "氢气" }
 ]
+
+type CertificateIcon = ComponentType<AnimatedIconProps>
+
+const sectionIcons = {
+  base: FileDescriptionIcon,
+  device: CpuIcon,
+  probes: SlidersHorizontalIcon,
+  location: MapPinIcon,
+  environment: Cloud3Icon,
+} as const
+
+function IconBadge({ Icon, tone }: { Icon: CertificateIcon, tone: string }) {
+  return (
+    <div className={`w-9 h-9 ${tone} rounded-xl flex items-center justify-center mr-3 text-white shadow-sm ring-1 ring-white/40`}>
+      <Icon size={19} strokeWidth={2.2} />
+    </div>
+  )
+}
 
 export default function HomePage() {
   const [loading, setLoading] = useState(false)
@@ -442,18 +472,14 @@ export default function HomePage() {
       <LogoutButton />
       <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl transition-shadow duration-300 animate-fade-in-up hover:shadow-2xl">
         <h2 className="text-3xl font-bold mb-8 text-gray-800">越鑫证书制作</h2>
-        <form id="generateForm" className="space-y-6" onSubmit={handleSubmit}>
+        <form id="generateForm" className="space-y-5" onSubmit={handleSubmit}>
           {/* 基本信息组 */}
-          <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-6 shadow-sm no-transform-for-datepicker transition-shadow duration-300 hover:shadow-lg animate-fade-in-up">
+          <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 rounded-xl p-5 shadow-sm no-transform-for-datepicker transition-shadow duration-300 hover:shadow-lg animate-fade-in-up">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
+              <IconBadge Icon={sectionIcons.base} tone="bg-blue-600" />
               <h3 className="text-lg font-semibold text-gray-800">基本信息</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
                 <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-2">委托单位名称</label>
                 <div className="relative">
@@ -537,16 +563,12 @@ export default function HomePage() {
           </div>
 
           {/* 设备信息组 */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-100">
+          <div className="bg-gradient-to-r from-white to-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-100">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
+              <IconBadge Icon={sectionIcons.device} tone="bg-blue-600" />
               <h3 className="text-lg font-semibold text-gray-800">设备信息</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
                 <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">制造商名称</label>
                 <Select
@@ -618,19 +640,15 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 探头配置组 */}
-          <div className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-150">
+          {/* 探头与分布配置组 */}
+          <div className="bg-gradient-to-r from-sky-50 to-white border border-blue-100 rounded-xl p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-150">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800">探头配置</h3>
+              <IconBadge Icon={sectionIcons.probes} tone="bg-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-800">探头与分布配置</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label htmlFor="all_nums" className="block text-sm font-medium text-gray-700 mb-2">探头总数量</label>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+              <div className="md:col-span-3">
+                <label htmlFor="all_nums" className="block text-sm font-medium text-gray-700 mb-2">总数量</label>
                 <input 
                   type="number" 
                   id="all_nums" 
@@ -641,8 +659,8 @@ export default function HomePage() {
                   placeholder="请输入探头总数" 
                 />
               </div>
-              <div>
-                <label htmlFor="start_num" className="block text-sm font-medium text-gray-700 mb-2">探头起始编号</label>
+              <div className="md:col-span-2">
+                <label htmlFor="start_num" className="block text-sm font-medium text-gray-700 mb-2">起始编号</label>
                 <input 
                   type="number" 
                   id="start_num" 
@@ -654,24 +672,9 @@ export default function HomePage() {
                   defaultValue="1" 
                 />
               </div>
-            </div>
-          </div>
-
-          {/* 分布配置组 */}
-          <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-200">
-            <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800">分布配置</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+              <div className="md:col-span-4">
                 <label htmlFor="sections" className="block text-sm font-medium text-gray-700 mb-2">
-                  探头分布区域 <span className="text-gray-500 text-sm">(可选)</span>
+                  分布区域 <span className="text-gray-500 text-sm">(可选)</span>
                 </label>
                 <input 
                   type="text" 
@@ -681,8 +684,8 @@ export default function HomePage() {
                   placeholder="如: 厂房A 厂房B"
                 />
               </div>
-              <div>
-                <label htmlFor="sections_num" className="block text-sm font-medium text-gray-700 mb-2">各区域探头数量</label>
+              <div className="md:col-span-3">
+                <label htmlFor="sections_num" className="block text-sm font-medium text-gray-700 mb-2">各区域数量</label>
                 <input 
                   type="text" 
                   id="sections_num" 
@@ -693,27 +696,18 @@ export default function HomePage() {
                 />
               </div>
             </div>
-            <div className="mt-4 space-y-2">
-              <p className="text-sm text-gray-500">
-                • 区域为空时：各区域探头数量直接填写总数量
-              </p>
-              <p className="text-sm text-gray-500">
-                • 区域不为空时：需要与区域数量一一对应，支持空格、逗号分隔
-              </p>
+            <div className="mt-4 rounded-lg border border-blue-100 bg-white/70 px-4 py-3 text-sm text-gray-500">
+              区域为空时，各区域探头数量直接填写总数量；区域不为空时，需要与区域数量一一对应，支持空格、逗号分隔。
             </div>
           </div>
 
           {/* 环境参数组 */}
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-250">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-200">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                </svg>
-              </div>
+              <IconBadge Icon={sectionIcons.environment} tone="bg-slate-600" />
               <h3 className="text-lg font-semibold text-gray-800">环境参数</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-2">温度（°C）</label>
                 <input 
@@ -791,10 +785,8 @@ export default function HomePage() {
         {mergeDone && (
           <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200 text-center">
             <div className="flex items-center justify-center mb-3">
-              <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl text-green-700">
+                <CheckIcon size={26} strokeWidth={2.4} />
               </div>
             </div>
             <h3 className="text-lg font-medium text-green-900 mb-4">处理完成！</h3>
@@ -812,9 +804,7 @@ export default function HomePage() {
                   }}
                   className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md"
                 >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+                  <DownloadIcon size={20} className="mr-2" />
                   下载完整证书包（含PDF）
                 </a>
               )
@@ -830,9 +820,7 @@ export default function HomePage() {
                   }}
                   className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-md"
                 >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+                  <DownloadIcon size={20} className="mr-2" />
                   下载证书文件
                 </a>
               )
@@ -847,9 +835,7 @@ export default function HomePage() {
               href="/companies" 
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 rounded-lg hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform border border-gray-200 hover:border-blue-200"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+              <CpuIcon size={20} className="mr-2" />
               探头厂家信息列表
         </Link>
           </div>
@@ -880,85 +866,97 @@ export default function HomePage() {
 }
 
 function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () => void, onConfirm: () => void }) {
+  type ConfirmFieldGroup = {
+    title: string
+    Icon: CertificateIcon
+    iconTone: string
+    color: string
+    borderColor: string
+    fields: Record<string, string>
+    wideFields: string[]
+  }
+
   // 按分组组织字段
-  const fieldGroups = [
+  const fieldGroups: ConfirmFieldGroup[] = [
     {
       title: "基本信息",
-      icon: "📋",
-      color: "from-gray-50 to-slate-50",
-      borderColor: "border-gray-200",
+      Icon: sectionIcons.base,
+      iconTone: "bg-blue-600",
+      color: "from-blue-50 to-sky-50",
+      borderColor: "border-blue-100",
       fields: {
         company_name: "委托单位名称",
         gas: "检测气体",
         date: "检测日期",
-      }
+      },
+      wideFields: ["company_name"],
     },
     {
       title: "设备信息", 
-      icon: "🏭",
-      color: "from-green-50 to-emerald-50",
-      borderColor: "border-green-200",
+      Icon: sectionIcons.device,
+      iconTone: "bg-blue-600",
+      color: "from-white to-blue-50",
+      borderColor: "border-blue-100",
       fields: {
         alert_factory: "制造商名称",
         alert_type: "型号",
         liangcheng: "量程",
-      }
+      },
+      wideFields: ["alert_factory"],
     },
     {
-      title: "探头配置",
-      icon: "🔧", 
-      color: "from-purple-50 to-violet-50",
-      borderColor: "border-purple-200",
+      title: "探头与分布配置",
+      Icon: sectionIcons.probes,
+      iconTone: "bg-blue-600",
+      color: "from-sky-50 to-white",
+      borderColor: "border-blue-100",
       fields: {
-        all_nums: "探头总数量",
-        start_num: "探头起始编号",
-      }
-    },
-    {
-      title: "分布配置",
-      icon: "📍",
-      color: "from-rose-50 to-pink-50", 
-      borderColor: "border-rose-200",
-      fields: {
-        sections: "探头分布区域",
-        sections_num: "各区域探头数量",
-      }
+        all_nums: "总数量",
+        start_num: "起始编号",
+        sections: "分布区域",
+        sections_num: "各区域数量",
+      },
+      wideFields: ["sections"],
     },
     {
       title: "环境参数",
-      icon: "🌡️",
-      color: "from-orange-50 to-amber-50",
-      borderColor: "border-orange-200", 
+      Icon: sectionIcons.environment,
+      iconTone: "bg-slate-600",
+      color: "from-gray-50 to-slate-50",
+      borderColor: "border-gray-200", 
       fields: {
         temperature: "温度（°C）",
         humidity: "湿度（%）",
-      }
+      },
+      wideFields: [],
     }
   ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto relative mx-4 animate-fade-in-up">
+      <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-6 w-full max-w-3xl max-h-[86vh] overflow-y-auto relative mx-4 animate-fade-in-up">
         {/* 标题区域 */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className="flex items-center justify-between gap-4 mb-5">
+          <div>
+            <h3 className="text-xl font-bold text-gray-800">确认证书信息</h3>
+            <p className="text-sm text-gray-500 mt-1">请核对信息，确认无误后生成</p>
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">确认证书信息</h3>
-          <p className="text-gray-600">请仔细核对以下信息，确认无误后点击生成</p>
+          <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center text-blue-700 flex-none">
+            <CheckIcon size={24} strokeWidth={2.4} />
+          </div>
         </div>
 
         {/* 分组信息展示 */}
-        <div className="space-y-6 mb-8">
+        <div className="space-y-3 mb-5">
           {fieldGroups.map((group, groupIndex) => (
-            <div key={groupIndex} className={`bg-gradient-to-r ${group.color} border ${group.borderColor} rounded-xl p-6`}>
-              <div className="flex items-center mb-5">
-                <span className="text-2xl mr-3">{group.icon}</span>
-                <h4 className="text-lg font-semibold text-gray-800">{group.title}</h4>
+            <div key={groupIndex} className={`bg-gradient-to-r ${group.color} border ${group.borderColor} rounded-xl p-4`}>
+              <div className="flex items-center mb-3">
+                <div className={`w-7 h-7 ${group.iconTone} rounded-lg flex items-center justify-center mr-2.5 text-white shadow-sm`}>
+                  <group.Icon size={15} strokeWidth={2.2} />
+                </div>
+                <h4 className="text-base font-semibold text-gray-800">{group.title}</h4>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 {Object.entries(group.fields).map(([key, label]) => {
                   const value = data?.[key];
                   const displayValue = value
@@ -966,10 +964,11 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
                       ? `${value} %LEL`
                       : value
                     : "-";
+                  const isWide = group.wideFields.includes(key);
                   return (
-                    <div key={key} className="bg-white bg-opacity-70 rounded-lg p-4 border border-white border-opacity-50">
-                      <div className="text-sm font-medium text-gray-600 mb-2">{label}</div>
-                      <div className={`text-base font-semibold ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <div key={key} className={`bg-white bg-opacity-80 rounded-lg px-3 py-2 border border-white border-opacity-70 min-w-0 ${isWide ? 'lg:col-span-2' : ''}`}>
+                      <div className="text-xs font-medium text-gray-500 mb-1">{label}</div>
+                      <div className={`text-sm font-semibold leading-5 break-words ${value ? 'text-gray-900' : 'text-gray-400'}`}>
                         {displayValue}
                       </div>
                     </div>
@@ -981,28 +980,24 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
         </div>
 
         {/* 按钮区域 */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
           <button
             type="button"
-            className="px-8 py-3 rounded-xl border-2 border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
+            className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
             onClick={onCancel}
           >
             <span className="flex items-center justify-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-              </svg>
+              <ArrowBackIcon size={18} className="mr-2" />
               返回修改
             </span>
           </button>
           <button
             type="button"
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 shadow-md"
             onClick={onConfirm}
           >
             <span className="flex items-center justify-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <CheckIcon size={18} className="mr-2" />
               确认生成证书
             </span>
           </button>
