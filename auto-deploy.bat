@@ -59,16 +59,6 @@ echo ===== Restart Next.js =====
 pm2 restart waitlist-next
 if errorlevel 1 goto fail
 
-git diff --name-only %LOCAL% %REMOTE% > "%TEMP%\waitlist-changed-files.txt"
-findstr /r /c:"^main.py$" /c:"^requirements.txt$" "%TEMP%\waitlist-changed-files.txt" >nul
-if not errorlevel 1 (
-  echo ===== Restart Flask backend =====
-  pm2 restart waitlist-flask
-  if errorlevel 1 goto fail
-) else (
-  echo Flask backend unchanged. Skip Flask restart.
-)
-
 echo Deploy success.
 goto success
 
