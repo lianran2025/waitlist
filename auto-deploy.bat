@@ -29,8 +29,16 @@ echo New commit found.
 echo Local:  %LOCAL%
 echo Remote: %REMOTE%
 
-for /f "delims=" %%i in ('git status --porcelain') do (
-  echo Working tree has local changes. Please review before auto deploy.
+git diff --quiet
+if errorlevel 1 (
+  echo Tracked files have local changes. Please review before auto deploy.
+  git status --short
+  goto fail
+)
+
+git diff --cached --quiet
+if errorlevel 1 (
+  echo Staged files have local changes. Please review before auto deploy.
   git status --short
   goto fail
 )
