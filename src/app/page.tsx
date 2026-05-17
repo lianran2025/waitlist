@@ -471,7 +471,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex flex-col items-center justify-center p-6 relative">
       <LogoutButton />
       <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl transition-shadow duration-300 animate-fade-in-up hover:shadow-2xl">
-        <h2 className="text-3xl font-bold mb-8 text-gray-800">越鑫证书制作</h2>
+        <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">越鑫证书制作</h2>
         <form id="generateForm" className="space-y-5" onSubmit={handleSubmit}>
           {/* 基本信息组 */}
           <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 rounded-xl p-5 shadow-sm no-transform-for-datepicker transition-shadow duration-300 hover:shadow-lg animate-fade-in-up">
