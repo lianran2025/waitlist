@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
     }
     
     const allAlertNums = createAllAlertsNumList(sections, sectionsNum);
-    console.log(`[证书生成] 开始生成 DOCX，公司=${companyName}，探头数=${allNums}，预计文件数=${allNums * 2}`);
+    console.log(`[证书生成] 开始生成 DOCX，公司=${companyName}，探头数=${allNums}，每个正常探头额外生成打印版证书`);
 
     // 1. 生成所有 docx，随后统一上传到 Windows 后端服务
     const docxBuffers: { name: string, buffer: Buffer }[] = [];
@@ -267,6 +267,7 @@ export async function POST(req: NextRequest) {
       const certificateTemplatePath = isProblem
         ? path.join(process.cwd(), 'templates', 'problem.docx')
         : path.join(process.cwd(), 'templates', 'new_templates', 'new_normal.docx');
+      const printCertificateTemplatePath = path.join(process.cwd(), 'templates', 'new_templates', 'new_normal_02.docx');
       const recordTemplatePath = path.join(process.cwd(), 'templates', 'new_templates', 'jilu.docx');
       const alarmActionValue = calibrationRecord?.alarm_action_value || String(alarmValue);
       const repeatabilityValue = calibrationRecord?.repeatability || '0.4';
@@ -316,11 +317,20 @@ export async function POST(req: NextRequest) {
         console.log(`[证书生成] 渲染第 ${i + 1}/${allNums} 个探头，编号=${fileNum}，探头=${alertNumPlace ? `${alertNumPlace} ` : ''}${alertNum}，故障=${isProblem ? '是' : '否'}`);
         const certificateBuffer = await renderDocxTemplate(certificateTemplatePath, data);
         console.log(`[证书生成] 证书渲染完成，编号=${fileNum}，大小=${certificateBuffer.length} bytes`);
+        const printCertificateBuffer = isProblem
+          ? null
+          : await renderDocxTemplate(printCertificateTemplatePath, data);
+        if (printCertificateBuffer) {
+          console.log(`[证书生成] 打印版证书渲染完成，编号=${fileNum}，大小=${printCertificateBuffer.length} bytes`);
+        }
         const recordBuffer = await renderDocxTemplate(recordTemplatePath, data);
         console.log(`[证书生成] 原始记录渲染完成，编号=${fileNum}，大小=${recordBuffer.length} bytes，用时=${Date.now() - itemStart}ms`);
         const baseDocxName = `${fileNum}-${alertNum}`;
 
         docxBuffers.push({ name: `${baseDocxName}-证书.docx`, buffer: certificateBuffer });
+        if (printCertificateBuffer) {
+          docxBuffers.push({ name: `${baseDocxName}-证书（打印版）.docx`, buffer: printCertificateBuffer });
+        }
         docxBuffers.push({ name: `${baseDocxName}-原始记录.docx`, buffer: recordBuffer });
       } catch (err) {
         const errorMsg = (err as Error).message || String(err);

@@ -17,6 +17,8 @@ UPLOAD_FOLDER = 'uploads'
 PDF_FOLDER = 'pdfs'
 MERGED_FOLDER = 'merged'
 COMPLETE_FOLDER = 'complete'  # 新增：完整压缩包文件夹
+PRINT_CERTIFICATE_FOLDER_NAME = '检测证书（打印版）'
+PRINT_CERTIFICATE_MARKER = '打印版'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PDF_FOLDER, exist_ok=True)
 os.makedirs(MERGED_FOLDER, exist_ok=True)
@@ -37,7 +39,12 @@ def add_docx_files_to_zip(zipf, docx_folder):
     for file in sorted(os.listdir(docx_folder)):
         if file.endswith('.docx') and not file.startswith('~$'):
             file_path = os.path.join(docx_folder, file)
-            archive_path = f"原始记录/{file}" if '原始记录' in file else file
+            if PRINT_CERTIFICATE_MARKER in file:
+                archive_path = f"{PRINT_CERTIFICATE_FOLDER_NAME}/{file}"
+            elif '原始记录' in file:
+                archive_path = f"原始记录/{file}"
+            else:
+                archive_path = file
             zipf.write(file_path, archive_path)
             file_count += 1
 
@@ -108,7 +115,10 @@ def convert_to_pdf(task_id):
             
         pdf_task_folder = os.path.join(PDF_FOLDER, task_id)
         os.makedirs(pdf_task_folder, exist_ok=True)
-        files = [f for f in os.listdir(task_folder) if f.endswith('.docx') and not f.startswith('~$')]
+        files = [
+            f for f in os.listdir(task_folder)
+            if f.endswith('.docx') and not f.startswith('~$') and PRINT_CERTIFICATE_MARKER not in f
+        ]
         total = len(files)
         
         if total == 0:
@@ -161,7 +171,10 @@ def batch_convert_docx_to_pdf(docx_folder, pdf_folder, task_id=None):
     try:
         word = win32com.client.Dispatch('Word.Application')
         word.Visible = False
-        files = [f for f in os.listdir(docx_folder) if f.endswith('.docx') and not f.startswith('~$')]
+        files = [
+            f for f in os.listdir(docx_folder)
+            if f.endswith('.docx') and not f.startswith('~$') and PRINT_CERTIFICATE_MARKER not in f
+        ]
         total = len(files)
         for idx, filename in enumerate(files):
             src = os.path.abspath(os.path.join(docx_folder, filename))
@@ -302,12 +315,12 @@ def package_complete_files(task_id):
         if not os.path.exists(merged_pdf):
             return jsonify({'error': '合并PDF文件不存在'}), 404
         
-        # 创建完整压缩包：证书放根目录，原始记录放到单独文件夹
+        # 创建完整压缩包：证书放根目录，原始记录和打印版证书放到单独文件夹
         file_count = 0
         with zipfile.ZipFile(complete_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             docx_count = add_docx_files_to_zip(zipf, docx_folder)
             file_count += docx_count
-            log = f"添加docx文件数量: {docx_count}，原始记录已放入 原始记录/ 文件夹"
+            log = f"添加docx文件数量: {docx_count}，原始记录已放入 原始记录/ 文件夹，打印版证书已放入 {PRINT_CERTIFICATE_FOLDER_NAME}/ 文件夹"
             print(log)
             if task_id in task_status and 'logs' in task_status[task_id]:
                 task_status[task_id]['logs'].append(log)
@@ -331,7 +344,7 @@ def package_complete_files(task_id):
         print(log)
         if task_id in task_status and 'logs' in task_status[task_id]:
             task_status[task_id]['logs'].append(log)
-        log = "原始记录已放入压缩包内的 原始记录/ 文件夹"
+        log = f"原始记录已放入压缩包内的 原始记录/ 文件夹，打印版证书已放入 {PRINT_CERTIFICATE_FOLDER_NAME}/ 文件夹"
         print(log)
         if task_id in task_status and 'logs' in task_status[task_id]:
             task_status[task_id]['logs'].append(log)
