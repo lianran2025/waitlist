@@ -175,6 +175,21 @@ export async function POST(req: NextRequest) {
       return allAlertsNum;
     }
 
+    function sanitizeFileNamePart(value: string): string {
+      return value
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+        .trim();
+    }
+
+    function createBaseDocxName(fileNum: string, alertNumPlace: string, alertNum: string): string {
+      if (sectionsRaw === '') {
+        return fileNum;
+      }
+
+      const alertName = sanitizeFileNamePart(`${alertNumPlace}${alertNum}`);
+      return `${fileNum}-${alertName || alertNum}`;
+    }
+
     function parseProblemNums(input: string): string[] {
       if (!input) return [];
       const result: string[] = [];
@@ -325,7 +340,7 @@ export async function POST(req: NextRequest) {
         }
         const recordBuffer = await renderDocxTemplate(recordTemplatePath, data);
         console.log(`[证书生成] 原始记录渲染完成，编号=${fileNum}，大小=${recordBuffer.length} bytes，用时=${Date.now() - itemStart}ms`);
-        const baseDocxName = `${fileNum}-${alertNum}`;
+        const baseDocxName = createBaseDocxName(fileNum, alertNumPlace, alertNum);
 
         docxBuffers.push({ name: `${baseDocxName}-证书.docx`, buffer: certificateBuffer });
         if (printCertificateBuffer) {
