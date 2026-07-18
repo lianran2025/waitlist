@@ -121,21 +121,22 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
     >
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto w-full max-w-2xl rounded-xl bg-white p-10 shadow-2xl">
-          <div className="flex items-center justify-between mb-6">
+      <div className="fixed inset-0 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
+        <Dialog.Panel className="mx-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-10">
+          <div className="mb-4 flex items-center justify-between sm:mb-6">
             <Dialog.Title className="text-xl font-semibold text-gray-900">
               添加新公司
             </Dialog.Title>
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-gray-500"
+              aria-label="关闭添加公司弹窗"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="shortName" className="block text-sm font-medium text-gray-700 mb-1">
                 公司简称
@@ -275,7 +276,7 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
               </span>
             </label>
 
-            <div className="mt-8 flex justify-end space-x-3">
+            <div className="mt-6 flex justify-end space-x-3 sm:mt-8">
               <button
                 type="button"
                 onClick={handleClose}

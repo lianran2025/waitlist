@@ -77,13 +77,13 @@ export default function CompaniesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">公司列表</h1>
+        <div className="mb-6 flex flex-col items-stretch gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">公司列表</h1>
           <Link 
             href="/" 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <HomeIcon className="h-5 w-5 mr-2" />
             返回证书生成
@@ -105,7 +105,7 @@ export default function CompaniesPage() {
           </div>
         )}
         {/* 搜索框 */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <input
             type="text"
             value={searchTerm}
@@ -116,7 +116,7 @@ export default function CompaniesPage() {
         </div>
         {/* 公司列表 */}
         {filteredCompanies.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 sm:gap-6">
             {filteredCompanies.map(company => (
               <CompanyCard
                 key={company.id}

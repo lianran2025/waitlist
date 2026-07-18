@@ -46,7 +46,7 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+      <div className="rounded-lg bg-white p-5 shadow-md transition-shadow hover:shadow-lg sm:p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-lg font-medium text-gray-900">{company.shortName}</h3>
@@ -127,8 +127,8 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
       >
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
+          <Dialog.Panel className="mx-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-5 shadow-xl sm:p-6">
             <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
               确认删除
             </Dialog.Title>

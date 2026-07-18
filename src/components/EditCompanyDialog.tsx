@@ -51,8 +51,8 @@ export function EditCompanyDialog({ company, isOpen, onClose, onUpdate }: EditCo
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-2xl w-full bg-white rounded-xl p-6">
+      <div className="fixed inset-0 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
+        <Dialog.Panel className="mx-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-5 sm:max-h-[calc(100dvh-2rem)] sm:p-6">
           <Dialog.Title className="text-xl font-semibold mb-4">
             编辑公司信息
           </Dialog.Title>
@@ -91,7 +91,7 @@ export function EditCompanyDialog({ company, isOpen, onClose, onUpdate }: EditCo
               <textarea
                 value={formData.products}
                 onChange={e => setFormData(prev => ({ ...prev, products: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
+                className="h-24 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:h-32"
                 required
               />
             </div>

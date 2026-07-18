@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import type { ComponentType } from "react"
+import type { ComponentType, ReactNode } from "react"
+import { createPortal } from "react-dom"
 import Select from 'react-select'
 import DatePicker from 'react-datepicker'
-import { Fragment } from "react"
 import Link from 'next/link'
 import LogoutButton from '@/components/LogoutButton'
 import {
@@ -42,6 +42,18 @@ function IconBadge({ Icon, tone }: { Icon: CertificateIcon, tone: string }) {
       <Icon size={19} strokeWidth={2.2} />
     </div>
   )
+}
+
+function ModalPortal({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
+  return createPortal(children, document.body)
 }
 
 export default function HomePage() {
@@ -468,13 +480,13 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex flex-col items-center justify-center px-3 pb-6 pt-16 sm:p-6 relative">
       <LogoutButton />
-      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-4xl transition-shadow duration-300 animate-fade-in-up hover:shadow-2xl">
-        <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">越鑫证书制作</h2>
+      <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-8 lg:p-10 w-full max-w-4xl transition-shadow duration-300 animate-fade-in-up hover:shadow-2xl">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-gray-800">越鑫证书制作</h2>
         <form id="generateForm" className="space-y-5" onSubmit={handleSubmit}>
           {/* 基本信息组 */}
-          <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 rounded-xl p-5 shadow-sm no-transform-for-datepicker transition-shadow duration-300 hover:shadow-lg animate-fade-in-up">
+          <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 rounded-xl p-4 sm:p-5 shadow-sm no-transform-for-datepicker transition-shadow duration-300 hover:shadow-lg animate-fade-in-up">
             <div className="flex items-center mb-4">
               <IconBadge Icon={sectionIcons.base} tone="bg-blue-600" />
               <h3 className="text-lg font-semibold text-gray-800">基本信息</h3>
@@ -562,7 +574,7 @@ export default function HomePage() {
           </div>
 
           {/* 设备信息组 */}
-          <div className="bg-gradient-to-r from-white to-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-100">
+          <div className="bg-gradient-to-r from-white to-blue-50 border border-blue-100 rounded-xl p-4 sm:p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-100">
             <div className="flex items-center mb-4">
               <IconBadge Icon={sectionIcons.device} tone="bg-blue-600" />
               <h3 className="text-lg font-semibold text-gray-800">设备信息</h3>
@@ -640,7 +652,7 @@ export default function HomePage() {
           </div>
 
           {/* 探头与分布配置组 */}
-          <div className="bg-gradient-to-r from-sky-50 to-white border border-blue-100 rounded-xl p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-150">
+          <div className="bg-gradient-to-r from-sky-50 to-white border border-blue-100 rounded-xl p-4 sm:p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-150">
             <div className="flex items-center mb-4">
               <IconBadge Icon={sectionIcons.probes} tone="bg-blue-600" />
               <h3 className="text-lg font-semibold text-gray-800">探头与分布配置</h3>
@@ -701,7 +713,7 @@ export default function HomePage() {
           </div>
 
           {/* 环境参数组 */}
-          <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-200">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg animate-fade-in-up delay-200">
             <div className="flex items-center mb-4">
               <IconBadge Icon={sectionIcons.environment} tone="bg-slate-600" />
               <h3 className="text-lg font-semibold text-gray-800">环境参数</h3>
@@ -841,16 +853,25 @@ export default function HomePage() {
         </div>
 
         {errorModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-              <h3 className="text-lg font-bold mb-4 text-red-600">错误提示</h3>
-              <div className="mb-6 whitespace-pre-line text-gray-800">{errorModal}</div>
-              <button
-                className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
-                onClick={() => setErrorModal("")}
-              >关闭</button>
+          <ModalPortal>
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="error-modal-title"
+            >
+              <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl sm:p-8">
+                <h3 id="error-modal-title" className="mb-4 text-lg font-bold text-red-600">错误提示</h3>
+                <div className="mb-6 whitespace-pre-line break-words text-gray-800">{errorModal}</div>
+                <div className="flex justify-end">
+                  <button
+                    className="rounded-lg bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    onClick={() => setErrorModal("")}
+                  >关闭</button>
+                </div>
+              </div>
             </div>
-          </div>
+          </ModalPortal>
         )}
         {showConfirmModal && (
           <ConfirmModal
@@ -932,12 +953,18 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-6 w-full max-w-3xl max-h-[86vh] overflow-y-auto relative mx-4 animate-fade-in-up">
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+      >
+        <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-2xl animate-fade-in-up sm:max-h-[86vh] sm:p-6">
         {/* 标题区域 */}
         <div className="flex items-center justify-between gap-4 mb-5">
           <div>
-            <h3 className="text-xl font-bold text-gray-800">确认证书信息</h3>
+            <h3 id="confirm-modal-title" className="text-xl font-bold text-gray-800">确认证书信息</h3>
             <p className="text-sm text-gray-500 mt-1">请核对信息，确认无误后生成</p>
           </div>
           <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center text-blue-700 flex-none">
@@ -948,7 +975,7 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
         {/* 分组信息展示 */}
         <div className="space-y-3 mb-5">
           {fieldGroups.map((group, groupIndex) => (
-            <div key={groupIndex} className={`bg-gradient-to-r ${group.color} border ${group.borderColor} rounded-xl p-4`}>
+            <div key={groupIndex} className={`bg-gradient-to-r ${group.color} border ${group.borderColor} rounded-xl p-3 sm:p-4`}>
               <div className="flex items-center mb-3">
                 <div className={`w-7 h-7 ${group.iconTone} rounded-lg flex items-center justify-center mr-2.5 text-white shadow-sm`}>
                   <group.Icon size={15} strokeWidth={2.2} />
@@ -1001,7 +1028,8 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
             </span>
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   )
-} 
+}

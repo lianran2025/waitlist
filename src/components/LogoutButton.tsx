@@ -44,13 +44,14 @@ export default function LogoutButton() {
     <button
       onClick={handleLogout}
       disabled={isLoading}
-      className="fixed top-4 right-4 flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      className="fixed right-3 top-3 z-40 flex items-center rounded-full bg-red-600 p-3 text-white shadow-lg transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:right-4 sm:top-4 sm:space-x-2 sm:rounded-lg sm:px-4 sm:py-2"
       title="退出登录"
+      aria-label={isLoading ? '正在退出登录' : '退出登录'}
     >
-      <ArrowRightOnRectangleIcon className="h-4 w-4" />
+      <ArrowRightOnRectangleIcon className="h-5 w-5 sm:h-4 sm:w-4" />
       <span className="hidden sm:inline">
         {isLoading ? '退出中...' : '退出'}
       </span>
     </button>
   );
-} 
+}
