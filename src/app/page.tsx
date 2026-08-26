@@ -839,16 +839,23 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 添加指向公司列表的链接 */}
+        {/* 常用工具入口 */}
         <div className="mt-8 pt-6 border-t border-gray-200 animate-fade-in delay-300">
-          <div className="text-center">
+          <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/word-to-pdf"
+              className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform border border-blue-600"
+            >
+              <FileDescriptionIcon size={20} className="mr-2" />
+              批量 Word 转 PDF
+            </Link>
             <Link 
               href="/companies" 
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 rounded-lg hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform border border-gray-200 hover:border-blue-200"
+              className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 rounded-lg hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform border border-gray-200 hover:border-blue-200"
             >
               <CpuIcon size={20} className="mr-2" />
               探头厂家信息列表
-        </Link>
+            </Link>
           </div>
         </div>
 

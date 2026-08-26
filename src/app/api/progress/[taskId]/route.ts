@@ -52,6 +52,67 @@ export async function GET(
       }, { status: 500 })
     }
 
+    if (data.mode === 'folder_conversion') {
+      const total = Number(data.total) || 0
+      const current = Number(data.current) || 0
+      const successCount = Number(data.success_count) || 0
+      const failureCount = Number(data.failure_count) || 0
+      const archiveDone = data.archive_done === true
+      const done = data.done === true
+      const failed = done && !archiveDone
+      const cleanupDone = data.source_cleanup_done === true && data.pdf_cleanup_done === true
+
+      let progress = 10
+      let message = data.queued ? '任务已进入队列，正在等待 Word 转换服务...' : '正在准备转换...'
+
+      if (current > 0 && total > 0) {
+        progress = 10 + Math.round((current / total) * 75)
+        message = `正在转换第 ${current} / ${total} 个文件`
+        if (data.current_file) {
+          message += `：${data.current_file}`
+        }
+      }
+      if (data.convert_done && !archiveDone) {
+        progress = 90
+        message = '转换完成，正在生成 PDF 压缩包...'
+      }
+      if (archiveDone) {
+        progress = 100
+        message = !cleanupDone
+          ? 'PDF ZIP 已生成，但服务器临时文件清理失败，请联系管理员'
+          : failureCount > 0
+          ? `处理完成：${successCount} 个成功，${failureCount} 个失败`
+          : `处理完成：${successCount} 个文件已转换并打包`
+      } else if (failed) {
+        progress = 100
+        message = data.error || '转换失败，未生成可下载的 ZIP'
+      }
+
+      return NextResponse.json({
+        taskId,
+        progress,
+        message,
+        status: failed ? 'failed' : archiveDone && done ? 'completed' : 'processing',
+        raw: {
+          mode: data.mode,
+          current,
+          total,
+          current_file: data.current_file || '',
+          results: Array.isArray(data.results) ? data.results : [],
+          success_count: successCount,
+          failure_count: failureCount,
+          convert_done: data.convert_done === true,
+          archive_done: archiveDone,
+          source_cleanup_done: data.source_cleanup_done === true,
+          pdf_cleanup_done: data.pdf_cleanup_done === true,
+          cleanup_error: data.cleanup_error || '',
+          done,
+          error: data.error || '',
+          logs: Array.isArray(data.logs) ? data.logs : [],
+        },
+      })
+    }
+
     // 转换Windows服务器的响应格式为前端期望的格式
     const convertDone = data.convert_done || false
     const mergeDone = data.merge_done || false
