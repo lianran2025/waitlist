@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+
 function encodeRFC5987ValueChars(value: string): string {
   return encodeURIComponent(value)
     .replace(/['()]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
@@ -31,12 +33,21 @@ export async function GET(
     
     console.log(`[下载代理] 后端URL: ${backendUrl}`)
     
-    // 代理请求到Windows服务器
+    // 代理请求到 Windows 服务器。大文件必须流式转发，不能先读入 Node 内存。
+    // 同时透传 Range，浏览器才可以在网络中断后发起断点续传。
+    const upstreamHeaders = new Headers({
+      'User-Agent': 'NextJS-Download-Proxy'
+    })
+    for (const headerName of ['range', 'if-range']) {
+      const value = request.headers.get(headerName)
+      if (value) {
+        upstreamHeaders.set(headerName, value)
+      }
+    }
+
     const response = await fetch(backendUrl, {
       method: 'GET',
-      headers: {
-        'User-Agent': 'NextJS-Download-Proxy'
-      }
+      headers: upstreamHeaders
     })
     
     console.log(`[下载代理] 后端响应状态: ${response.status}`)
@@ -52,27 +63,33 @@ export async function GET(
       }, { status: response.status })
     }
     
-    // 获取文件内容
-    const fileBuffer = await response.arrayBuffer()
-    console.log(`[下载代理] 文件大小: ${fileBuffer.byteLength} bytes`)
-    
-    // 获取原始响应头
+    if (!response.body) {
+      throw new Error('后端下载响应没有文件流')
+    }
+
+    // 保留与文件传输/断点续传有关的响应头，避免把 Flask 的 206 响应错误改为 200。
     const contentType = response.headers.get('content-type') || 'application/octet-stream'
     const contentDisposition = response.headers.get('content-disposition')
-    
-    console.log(`[下载代理] Content-Type: ${contentType}`)
-    console.log(`[下载代理] Content-Disposition: ${contentDisposition}`)
-    
-    // 创建响应
-    const proxyResponse = new NextResponse(fileBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': fileBuffer.byteLength.toString(),
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+    const proxyHeaders = new Headers({
+      'Content-Type': contentType,
+      'Cache-Control': 'private, no-store'
+    })
+
+    for (const headerName of ['content-length', 'content-range', 'accept-ranges']) {
+      const value = response.headers.get(headerName)
+      if (value) {
+        proxyHeaders.set(headerName, value)
       }
+    }
+
+    console.log(
+      `[下载代理] 流式转发: 状态=${response.status}, 长度=${response.headers.get('content-length') || '未知'}, Range=${request.headers.get('range') || '无'}`
+    )
+
+    // response.body 会在数据到达时立即转给浏览器，不再创建完整 ZIP 的内存副本。
+    const proxyResponse = new NextResponse(response.body, {
+      status: response.status,
+      headers: proxyHeaders
     })
     
     if (filename) {
@@ -81,7 +98,7 @@ export async function GET(
       proxyResponse.headers.set('Content-Disposition', contentDisposition)
     }
     
-    console.log(`[下载代理] 代理响应已创建`)
+    console.log(`[下载代理] 流式代理响应已创建`)
     return proxyResponse
     
   } catch (error) {
