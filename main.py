@@ -53,6 +53,52 @@ def add_docx_files_to_zip(zipf, docx_folder):
 
     return file_count
 
+
+# IDM 会对同一个文件并发请求多个 Range。每个 ZIP 路径单独加锁，确保只生成一次。
+docx_zip_locks = {}
+docx_zip_locks_guard = threading.Lock()
+
+
+def get_docx_zip_lock(file_path):
+    with docx_zip_locks_guard:
+        lock = docx_zip_locks.get(file_path)
+        if lock is None:
+            lock = threading.Lock()
+            docx_zip_locks[file_path] = lock
+        return lock
+
+
+def ensure_docx_zip(task_id, filename):
+    """返回一个稳定、完整的 DOCX ZIP，绝不在下载请求之间覆盖它。"""
+    docx_folder = os.path.join(UPLOAD_FOLDER, task_id)
+    file_path = os.path.join(UPLOAD_FOLDER, f'{task_id}_{filename}')
+
+    if not os.path.exists(docx_folder):
+        raise FileNotFoundError('docx文件夹不存在')
+
+    if os.path.isfile(file_path):
+        return file_path
+
+    zip_lock = get_docx_zip_lock(file_path)
+    with zip_lock:
+        # 等待其他 IDM 线程完成首次打包后，直接复用同一个成品。
+        if os.path.isfile(file_path):
+            return file_path
+
+        temporary_path = f'{file_path}.{uuid.uuid4().hex}.tmp'
+        try:
+            with zipfile.ZipFile(temporary_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                add_docx_files_to_zip(zipf, docx_folder)
+
+            # 同一磁盘内替换是原子的：下载线程只能见到旧完整文件或新完整文件。
+            os.replace(temporary_path, file_path)
+            print(f"DOCX压缩包生成完成并可供并发下载: {file_path}")
+        finally:
+            if os.path.exists(temporary_path):
+                os.remove(temporary_path)
+
+    return file_path
+
 # 全局任务进度字典
 task_status = {}
 folder_conversion_lock = threading.Lock()
@@ -658,20 +704,18 @@ def download_file(task_id, filetype):
             file_path += '.zip'
         elif filetype == 'docx':
             filename = normalize_zip_filename(request.args.get('filename'), f'certificates_{task_id}.zip')
-            docx_folder = os.path.join(UPLOAD_FOLDER, task_id)
-            file_path = os.path.join(UPLOAD_FOLDER, f'{task_id}_{filename}')
-
-            if not os.path.exists(docx_folder):
+            try:
+                file_path = ensure_docx_zip(task_id, filename)
+            except FileNotFoundError:
                 return jsonify({'error': 'docx文件夹不存在'}), 404
-
-            with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                add_docx_files_to_zip(zipf, docx_folder)
 
             return send_file(
                 file_path,
                 as_attachment=True,
                 download_name=filename,
-                mimetype='application/zip'
+                mimetype='application/zip',
+                conditional=True,
+                max_age=0
             )
         elif filetype == 'complete':
             # 新增：下载完整压缩包

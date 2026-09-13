@@ -38,7 +38,7 @@ export async function GET(
     const upstreamHeaders = new Headers({
       'User-Agent': 'NextJS-Download-Proxy'
     })
-    for (const headerName of ['range', 'if-range']) {
+    for (const headerName of ['range', 'if-range', 'if-none-match', 'if-modified-since']) {
       const value = request.headers.get(headerName)
       if (value) {
         upstreamHeaders.set(headerName, value)
@@ -72,10 +72,11 @@ export async function GET(
     const contentDisposition = response.headers.get('content-disposition')
     const proxyHeaders = new Headers({
       'Content-Type': contentType,
-      'Cache-Control': 'private, no-store'
+      // 下载文件需要保持私有，但允许下载器保存文件版本元数据以校验分段是否一致。
+      'Cache-Control': 'private, max-age=0, must-revalidate'
     })
 
-    for (const headerName of ['content-length', 'content-range', 'accept-ranges']) {
+    for (const headerName of ['content-length', 'content-range', 'accept-ranges', 'etag', 'last-modified']) {
       const value = response.headers.get(headerName)
       if (value) {
         proxyHeaders.set(headerName, value)
