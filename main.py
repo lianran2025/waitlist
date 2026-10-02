@@ -21,6 +21,7 @@ PDF_FOLDER = 'pdfs'
 MERGED_FOLDER = 'merged'
 COMPLETE_FOLDER = 'complete'  # 新增：完整压缩包文件夹
 PRINT_CERTIFICATE_FOLDER_NAME = '打印版证书'
+STAMPED_CERTIFICATE_FOLDER_NAME = '盖章版证书'
 PRINT_CERTIFICATE_MARKER = '打印版'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PDF_FOLDER, exist_ok=True)
@@ -34,7 +35,7 @@ def normalize_zip_filename(filename, default_filename):
         safe_filename = f'{safe_filename}.zip'
     return safe_filename
 
-def add_docx_files_to_zip(zipf, docx_folder):
+def add_docx_files_to_zip(zipf, docx_folder, organize_certificate_folder=False):
     file_count = 0
     if not os.path.exists(docx_folder):
         return file_count
@@ -46,6 +47,8 @@ def add_docx_files_to_zip(zipf, docx_folder):
                 archive_path = f"{PRINT_CERTIFICATE_FOLDER_NAME}/{file}"
             elif '原始记录' in file:
                 archive_path = f"原始记录/{file}"
+            elif organize_certificate_folder:
+                archive_path = f"{STAMPED_CERTIFICATE_FOLDER_NAME}/{file}"
             else:
                 archive_path = file
             zipf.write(file_path, archive_path)
@@ -88,7 +91,7 @@ def ensure_docx_zip(task_id, filename):
         temporary_path = f'{file_path}.{uuid.uuid4().hex}.tmp'
         try:
             with zipfile.ZipFile(temporary_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                add_docx_files_to_zip(zipf, docx_folder)
+                add_docx_files_to_zip(zipf, docx_folder, organize_certificate_folder=True)
 
             # 同一磁盘内替换是原子的：下载线程只能见到旧完整文件或新完整文件。
             os.replace(temporary_path, file_path)
