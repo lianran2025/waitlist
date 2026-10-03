@@ -79,9 +79,10 @@ export const calibrationRecordsJson = {
     return records[index]
   },
 
-  findRandomByAlarmThreshold: (alarmThreshold: number): CalibrationRecord | null => {
+  findRandomByAlarmThreshold: (alarmThreshold: number, strict = false): CalibrationRecord | null => {
     const records = readCalibrationRecordsFromFile()
     const matchingRecords = records.filter(record => record.alarm_threshold === alarmThreshold)
+    if (strict && matchingRecords.length === 0) return null
     const fallbackRecords = records.filter(record => record.alarm_threshold === 25)
     const availableRecords = matchingRecords.length > 0
       ? matchingRecords

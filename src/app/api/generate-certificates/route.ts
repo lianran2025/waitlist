@@ -5,6 +5,7 @@ import PizZip from 'pizzip'
 import Docxtemplater from 'docxtemplater'
 import axios from 'axios'
 import FormData from 'form-data'
+import { isSupportedAlarmThreshold } from '@/lib/alarm-thresholds'
 import { companiesJson } from '@/lib/companies-json'
 import { calibrationRecordsJson } from '@/lib/calibration-records-json'
 
@@ -263,6 +264,19 @@ export async function POST(req: NextRequest) {
       }
     }
     
+    // 页面提交值优先；兼容旧客户端未提交时使用厂家的默认值。
+    const submittedAlarmThreshold = formData.get('alarm_threshold');
+    if (submittedAlarmThreshold !== null) {
+      if (typeof submittedAlarmThreshold !== 'string' || !submittedAlarmThreshold.trim()) {
+        return Response.json({ message: '请选择本次报警阈值' }, { status: 400 });
+      }
+      alarmValue = Number(submittedAlarmThreshold);
+    }
+    if (!isSupportedAlarmThreshold(alarmValue)) {
+      return Response.json({ message: '本次报警阈值仅支持 10、15、20、25 %LEL，请重新选择' }, { status: 400 });
+    }
+    console.log(`[证书生成] 本次报警阈值=${alarmValue} %LEL，来源=${submittedAlarmThreshold === null ? '厂家默认' : '页面选择'}`);
+
     const allAlertNums = createAllAlertsNumList(sections, sectionsNum);
     console.log(`[证书生成] 开始生成 DOCX，公司=${companyName}，探头数=${allNums}，每个正常探头额外生成打印版证书`);
 
@@ -277,7 +291,10 @@ export async function POST(req: NextRequest) {
       const alertNumPlace = alertInfo.place || DEFAULT_ALERT_NUM_PLACE;
       // 判断当前编号是否为故障编号（仅根据文件编号后三位判断）
       const isProblem = problemNums.includes(fileNum.slice(-3));
-      const calibrationRecord = calibrationRecordsJson.findRandomByAlarmThreshold(alarmValue);
+      const calibrationRecord = calibrationRecordsJson.findRandomByAlarmThreshold(alarmValue, true);
+      if (!calibrationRecord) {
+        return Response.json({ message: `缺少 ${alarmValue} %LEL 对应的校准数据，无法生成证书` }, { status: 400 });
+      }
 
       const certificateTemplatePath = isProblem
         ? path.join(process.cwd(), 'templates', 'problem.docx')

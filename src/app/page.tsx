@@ -6,6 +6,7 @@ import { createPortal } from "react-dom"
 import Select from 'react-select'
 import DatePicker from 'react-datepicker'
 import Link from 'next/link'
+import { SUPPORTED_ALARM_THRESHOLDS, isSupportedAlarmThreshold } from "@/lib/alarm-thresholds"
 import LogoutButton from '@/components/LogoutButton'
 import {
   ArrowBackIcon,
@@ -75,6 +76,7 @@ export default function HomePage() {
   const [models, setModels] = useState<string[]>([])
   const [selectedModel, setSelectedModel] = useState("")
   const [selectedModelOption, setSelectedModelOption] = useState<any>(null)
+  const [selectedAlarmThreshold, setSelectedAlarmThreshold] = useState("")
   const [selectedRange, setSelectedRange] = useState("0-100")
   const [selectedGas, setSelectedGas] = useState("甲烷")
   const [selectedGasOption, setSelectedGasOption] = useState<any>({ label: "甲烷", value: "甲烷" })
@@ -128,10 +130,12 @@ export default function HomePage() {
       setModels([])
       setSelectedModel("")
       setSelectedModelOption(null)
+      setSelectedAlarmThreshold("")
       setSelectedRange("0-100")
       return
     }
     const company = companies.find(c => c.fullname === option.value)
+    setSelectedAlarmThreshold(String(company.alarm))
     setSelectedCompany(company.fullname)
     setSelectedCompanyOption(option)
     setModels(company.list)
@@ -141,6 +145,8 @@ export default function HomePage() {
   }
 
   const handleModelChange = (option: any) => {
+    const company = companies.find(c => c.fullname === selectedCompany)
+    setSelectedAlarmThreshold(company ? String(company.alarm) : "")
     if (!option) {
       setSelectedModel("")
       setSelectedModelOption(null)
@@ -175,6 +181,12 @@ export default function HomePage() {
       return
     }
 
+    if (!isSupportedAlarmThreshold(Number(selectedAlarmThreshold))) {
+      setErrorModal("请选择本次报警阈值：10、15、20 或 25 %LEL")
+      setLoading(false)
+      return
+    }
+
     if (!selectedDate) {
       setErrorModal("请选择检测日期")
       setLoading(false)
@@ -188,6 +200,7 @@ export default function HomePage() {
     formData.set("date", formattedDate)
 
     formData.set("alert_factory", selectedCompany)
+    formData.set("alarm_threshold", selectedAlarmThreshold)
     formData.set("alert_type", selectedModel)
     formData.set("liangcheng", selectedRange)
     formData.set("gas", selectedGas)
@@ -637,6 +650,27 @@ export default function HomePage() {
                 />
               </div>
               <div>
+                <label htmlFor="alarm_threshold" className="block text-sm font-medium text-gray-700 mb-2">本次报警阈值（%LEL）</label>
+                <select
+                  id="alarm_threshold"
+                  name="alarm_threshold"
+                  value={selectedAlarmThreshold}
+                  onChange={event => setSelectedAlarmThreshold(event.target.value)}
+                  disabled={!selectedCompany || !selectedModel}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white disabled:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">请选择阈值</option>
+                  {selectedAlarmThreshold && !isSupportedAlarmThreshold(Number(selectedAlarmThreshold)) && (
+                    <option value={selectedAlarmThreshold} disabled>厂家默认 {selectedAlarmThreshold}（暂不支持，请重新选择）</option>
+                  )}
+                  {SUPPORTED_ALARM_THRESHOLDS.map(threshold => (
+                    <option key={threshold} value={threshold}>{threshold} %LEL</option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-gray-500">仅用于本次全部探头，不修改厂家默认配置。切换厂家或型号后恢复默认阈值。</p>
+              </div>
+              <div>
                 <label htmlFor="liangcheng" className="block text-sm font-medium text-gray-700 mb-2">量程（%LEL）</label>
                 <input
                   type="text"
@@ -928,6 +962,7 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
         alert_factory: "制造商名称",
         alert_type: "型号",
         liangcheng: "量程",
+        alarm_threshold: "本次报警阈值（%LEL）",
       },
       wideFields: ["alert_factory"],
     },
