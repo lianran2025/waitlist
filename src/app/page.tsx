@@ -592,8 +592,8 @@ export default function HomePage() {
               <IconBadge Icon={sectionIcons.device} tone="bg-blue-600" />
               <h3 className="text-lg font-semibold text-gray-800">设备信息</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+              <div className="min-w-0">
                 <label htmlFor="alert_factory" className="block text-sm font-medium text-gray-700 mb-2">制造商名称</label>
                 <Select
                   inputId="alert_factory"
@@ -622,7 +622,7 @@ export default function HomePage() {
                 />
                 {companyError && <p className="mt-1 text-sm text-red-500">{companyError}</p>}
               </div>
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="alert_type" className="block text-sm font-medium text-gray-700 mb-2">型号</label>
                 <Select
                   inputId="alert_type"
@@ -649,7 +649,7 @@ export default function HomePage() {
                   menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="alarm_threshold" className="block text-sm font-medium text-gray-700 mb-2">本次报警阈值（%LEL）</label>
                 <select
                   id="alarm_threshold"
@@ -670,7 +670,7 @@ export default function HomePage() {
                 </select>
                 <p className="mt-2 text-xs text-gray-500">仅用于本次全部探头，不修改厂家默认配置。切换厂家或型号后恢复默认阈值。</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="liangcheng" className="block text-sm font-medium text-gray-700 mb-2">量程（%LEL）</label>
                 <input
                   type="text"
