@@ -8,6 +8,18 @@ This is a Next.js 14 certificate generation system (越鑫检测证书管理系�
 
 ## Canonical Project Decisions
 
+### Product model parameters (2026-10-19)
+
+These rules supersede the older company-level alarm/range selection notes below.
+
+- Each product model has its own `productConfigs[model] = { alarm, range, rangeConfirmed }`. Keep `products: string[]` and legacy company-level fields for compatibility.
+- Old JSON records without model configs are normalized in memory from their existing company alarm/range/confirmation values. Reading must not rewrite the file. Saving one company must preserve unrelated companies and unknown fields.
+- Company cards use a model dropdown and display only that model's parameters. Create/edit dialogs maintain every model independently. Renaming keeps its parameters; deleting removes the corresponding config.
+- Certificate generation resolves manufacturer + model on the server and uses the stored model's alarm/range. The generation page displays both read-only; request fields cannot override them. Stale submitted values return 409 before upload.
+- Saving validates the four supported alarm groups and range intervals, backs up the previous JSON to `src/data/companies.backup.json`, and replaces the data file only after writing a same-directory temporary file. Read failures must block writes.
+- Never migrate production by copying the local companies JSON. Run `node scripts/verify-product-configs.cjs` for isolated data compatibility and DOCX rendering checks; Windows upload/PDF processing remains separate acceptance.
+
+
 These are the important decisions established during the certificate/original-record refactor. Follow them first in new conversations so the user does not need to repeat context.
 
 - The current product target is combustible gas detector work under JJG 693-2011, not a generic certificate generator.

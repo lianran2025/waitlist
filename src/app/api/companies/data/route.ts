@@ -18,6 +18,7 @@ export async function GET() {
       name: company.shortName,
       fullname: company.fullName,
       list: company.products,
+      productConfigs: company.productConfigs,
       alarm: company.alarm,
       range: company.range,
       rangeConfirmed: company.rangeConfirmed
@@ -35,6 +36,6 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching companies:', error)
     // 返回空数组，保证前端安全
-    return NextResponse.json([])
+    return NextResponse.json({ error: '读取公司数据失败，请检查服务器数据文件' }, { status: 500 })
   }
 } 

@@ -5,6 +5,7 @@ import PizZip from 'pizzip'
 import Docxtemplater from 'docxtemplater'
 import axios from 'axios'
 import FormData from 'form-data'
+import { getProductConfig, isValidRange } from '@/lib/product-config'
 import { isSupportedAlarmThreshold } from '@/lib/alarm-thresholds'
 import { companiesJson } from '@/lib/companies-json'
 import { calibrationRecordsJson } from '@/lib/calibration-records-json'
@@ -42,7 +43,6 @@ export async function POST(req: NextRequest) {
     const date = formData.get('date') as string
     const temperature = formData.get('temperature') as string
     const humidity = formData.get('humidity') as string
-    const liangcheng = (formData.get('liangcheng') as string) || '0-100'
     
     // 添加调试信息
     console.log('[后端API] 收到的日期参数:', date, typeof date)
@@ -232,50 +232,25 @@ export async function POST(req: NextRequest) {
 
     const problemNums = parseProblemNums(problemNumsRaw || '');
     
-    // 根据公司名称（alert_factory）查询公司信息，获取 alarm 值
-    let alarmValue = 25; // 默认值
-    if (alertFactory) {
-      const company = companiesJson.findFirst({
-        where: {
-          fullName: alertFactory
-        }
-      });
-      
-      if (company && company.alarm) {
-        alarmValue = company.alarm;
-        console.log(`[动作值查询] 公司: ${alertFactory}, 动作值: ${alarmValue}`);
-      } else {
-        // 如果精确匹配失败，尝试模糊匹配
-        const companyFuzzy = companiesJson.findFirst({
-          where: {
-            OR: [
-              { fullName: { contains: alertFactory } },
-              { shortName: { contains: alertFactory } }
-            ]
-          }
-        });
-        
-        if (companyFuzzy && companyFuzzy.alarm) {
-          alarmValue = companyFuzzy.alarm;
-          console.log(`[动作值查询] 模糊匹配成功 - 公司: ${alertFactory}, 匹配到: ${companyFuzzy.fullName}, 动作值: ${alarmValue}`);
-        } else {
-          console.warn(`[动作值查询] 未找到公司: ${alertFactory}，使用默认值: ${alarmValue}`);
-        }
-      }
+    // 参数以服务器保存的型号配置为准，忽略客户端传来的阈值和量程。
+    const company = companiesJson.findFirst({ where: { fullName: alertFactory } });
+    if (!company || !company.products.includes(alertType)) {
+      return Response.json({ message: '厂家或型号不存在，请刷新页面后重新选择' }, { status: 400 });
     }
-    
-    // 页面提交值优先；兼容旧客户端未提交时使用厂家的默认值。
-    const submittedAlarmThreshold = formData.get('alarm_threshold');
-    if (submittedAlarmThreshold !== null) {
-      if (typeof submittedAlarmThreshold !== 'string' || !submittedAlarmThreshold.trim()) {
-        return Response.json({ message: '请选择本次报警阈值' }, { status: 400 });
-      }
-      alarmValue = Number(submittedAlarmThreshold);
+    const modelConfig = getProductConfig(company, alertType);
+    const alarmValue = modelConfig.alarm;
+    const liangcheng = modelConfig.range;
+    if (!isSupportedAlarmThreshold(alarmValue) || !isValidRange(liangcheng)) {
+      return Response.json({ message: '该型号的报警阈值或量程无效，请在公司信息中修改后重试' }, { status: 400 });
     }
-    if (!isSupportedAlarmThreshold(alarmValue)) {
-      return Response.json({ message: '本次报警阈值仅支持 10、15、20、25 %LEL，请重新选择' }, { status: 400 });
+    // 配置在确认后发生变化时，提示重载，避免确认值与实际生成值不同。
+    const submittedAlarm = formData.get('alarm_threshold');
+    const submittedRange = formData.get('liangcheng');
+    if ((submittedAlarm !== null && Number(submittedAlarm) !== alarmValue) ||
+        (submittedRange !== null && submittedRange !== liangcheng)) {
+      return Response.json({ message: '该型号参数已更新，请刷新页面核对阈值和量程后重新生成' }, { status: 409 });
     }
-    console.log(`[证书生成] 本次报警阈值=${alarmValue} %LEL，来源=${submittedAlarmThreshold === null ? '厂家默认' : '页面选择'}`);
+    console.log(`[证书生成] 型号=${alertType}，报警阈值=${alarmValue} %LEL，量程=${liangcheng} %LEL`);
 
     const allAlertNums = createAllAlertsNumList(sections, sectionsNum);
     console.log(`[证书生成] 开始生成 DOCX，公司=${companyName}，探头数=${allNums}，每个正常探头额外生成打印版证书`);

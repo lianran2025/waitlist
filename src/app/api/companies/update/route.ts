@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 // import { prisma } from '@/lib/prisma'
+import { CompanyValidationError } from '@/lib/product-config'
 import { companiesJson } from '@/lib/companies-json'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +9,7 @@ export const revalidate = 0
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, fullname, list, alarm, range, rangeConfirmed } = body
+    const { name, fullname, list, alarm, range, rangeConfirmed, productConfigs } = body
 
     // 查找是否存在相同全名的公司
     const existingCompany = companiesJson.findFirst({
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
         },
         data: {
           products: list,
+          productConfigs,
           ...(range ? { range } : {}),
           ...(typeof rangeConfirmed === 'boolean' ? { rangeConfirmed } : {})
         }
@@ -34,6 +36,7 @@ export async function POST(request: Request) {
         name: updatedCompany.shortName,
         fullname: updatedCompany.fullName,
         list: updatedCompany.products,
+        productConfigs: updatedCompany.productConfigs,
         alarm: updatedCompany.alarm,
         range: updatedCompany.range,
         rangeConfirmed: updatedCompany.rangeConfirmed
@@ -53,6 +56,7 @@ export async function POST(request: Request) {
           shortName: name,
           fullName: fullname,
           products: list,
+          productConfigs,
           alarm: alarm || 0,
           range: range || '0-100',
           rangeConfirmed: rangeConfirmed ?? false
@@ -63,6 +67,7 @@ export async function POST(request: Request) {
         name: newCompany.shortName,
         fullname: newCompany.fullName,
         list: newCompany.products,
+        productConfigs: newCompany.productConfigs,
         alarm: newCompany.alarm,
         range: newCompany.range,
         rangeConfirmed: newCompany.rangeConfirmed
@@ -77,6 +82,7 @@ export async function POST(request: Request) {
       return response
     }
   } catch (error) {
+    if (error instanceof CompanyValidationError) return NextResponse.json({ error: error.message }, { status: 400 })
     console.error('Error updating company:', error)
     return NextResponse.json(
       { error: '更新公司信息失败' },

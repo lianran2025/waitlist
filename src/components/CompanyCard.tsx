@@ -1,17 +1,12 @@
 import { useState } from 'react'
 import { EditCompanyDialog } from './EditCompanyDialog'
-import { ExclamationTriangleIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { TrashIcon } from '@heroicons/react/24/outline'
 import { Dialog } from '@headlessui/react'
 
-export interface Company {
-  id: string
-  shortName: string
-  fullName: string
-  products: string[]
-  alarm: number
-  range?: string
-  rangeConfirmed?: boolean
-}
+import { getProductConfig } from '@/lib/product-config'
+import type { EditableCompany } from './CompanyFormDialog'
+
+export type Company = EditableCompany
 
 interface CompanyCardProps {
   company: Company
@@ -19,6 +14,9 @@ interface CompanyCardProps {
 }
 
 export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
+  const [selectedModel, setSelectedModel] = useState(company.products[0] || '')
+  const activeModel = company.products.includes(selectedModel) ? selectedModel : company.products[0] || ''
+  const config = getProductConfig(company, activeModel)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -46,13 +44,13 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
 
   return (
     <>
-      <div className="rounded-lg bg-white p-5 shadow-md transition-shadow hover:shadow-lg sm:p-6">
+      <div className="min-w-0 rounded-lg bg-white p-5 shadow-md transition-shadow hover:shadow-lg sm:p-6">
         <div className="flex justify-between items-start mb-4">
-          <div>
+          <div className="min-w-0 pr-3">
             <h3 className="text-lg font-medium text-gray-900">{company.shortName}</h3>
-            <p className="text-sm text-gray-500">{company.fullName}</p>
+            <p className="break-words text-sm text-gray-500">{company.fullName}</p>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-none space-x-2">
             <button
               onClick={() => setIsEditDialogOpen(true)}
               className="text-blue-600 hover:text-blue-800"
@@ -68,47 +66,21 @@ export function CompanyCard({ company, onUpdate }: CompanyCardProps) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div>
-            <span className="text-sm font-medium text-gray-500">预警阈值：</span>
-            <span className="text-sm text-gray-900">{company.alarm}</span>
-          </div>
-          <div>
-            <span className="text-sm font-medium text-gray-500">量程：</span>
-            <span className="text-sm text-gray-900">{company.range || '0-100'} %LEL</span>
-            {company.rangeConfirmed ? (
-              <span className="ml-2 inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                已确认
-              </span>
-            ) : (
-              <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20">
-                默认值待确认
-              </span>
-            )}
-          </div>
-          {!company.rangeConfirmed && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              <div className="flex gap-2">
-                <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 flex-none" />
-                <p>
-                  当前量程是系统默认值，仅供临时使用。请尽快编辑公司信息，确认或修改真实量程。
-                </p>
-              </div>
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-600">
+            产品型号 <span className="font-normal text-gray-400">（{company.products.length} 个）</span>
+            <select value={activeModel} onChange={event => setSelectedModel(event.target.value)} disabled={!company.products.length} className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              {!company.products.length && <option value="">暂无型号，请编辑添加</option>}
+              {company.products.map(model => <option key={model} value={model}>{model}</option>)}
+            </select>
+          </label>
+          {activeModel && <div className="rounded-lg bg-blue-50/60 px-3 py-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><p className="text-xs text-gray-500">型号报警阈值</p><p className="mt-1 font-medium text-gray-900">{config.alarm} %LEL</p></div>
+              <div><p className="text-xs text-gray-500">型号量程</p><p className="mt-1 font-medium text-gray-900">{config.range} %LEL</p></div>
             </div>
-          )}
-          <div>
-            <span className="text-sm font-medium text-gray-500">产品列表：</span>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {company.products.map((product: string, index: number) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                >
-                  {product}
-                </span>
-              ))}
-            </div>
-          </div>
+            {!config.rangeConfirmed && <p className="mt-2 text-xs text-amber-700">该型号量程待确认，请在编辑中核对。</p>}
+          </div>}
         </div>
       </div>
 

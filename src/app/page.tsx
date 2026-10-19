@@ -6,7 +6,8 @@ import { createPortal } from "react-dom"
 import Select from 'react-select'
 import DatePicker from 'react-datepicker'
 import Link from 'next/link'
-import { SUPPORTED_ALARM_THRESHOLDS, isSupportedAlarmThreshold } from "@/lib/alarm-thresholds"
+import { isSupportedAlarmThreshold } from "@/lib/alarm-thresholds"
+import { getProductConfig } from "@/lib/product-config"
 import LogoutButton from '@/components/LogoutButton'
 import {
   ArrowBackIcon,
@@ -77,7 +78,7 @@ export default function HomePage() {
   const [selectedModel, setSelectedModel] = useState("")
   const [selectedModelOption, setSelectedModelOption] = useState<any>(null)
   const [selectedAlarmThreshold, setSelectedAlarmThreshold] = useState("")
-  const [selectedRange, setSelectedRange] = useState("0-100")
+  const [selectedRange, setSelectedRange] = useState("")
   const [selectedGas, setSelectedGas] = useState("甲烷")
   const [selectedGasOption, setSelectedGasOption] = useState<any>({ label: "甲烷", value: "甲烷" })
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -116,10 +117,14 @@ export default function HomePage() {
 
   useEffect(() => {
     fetch("/api/companies/data")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('厂家数据加载失败，请刷新页面重试')
+        return res.json()
+      })
       .then(data => {
         setCompanies(data)
       })
+      .catch(error => setErrorModal(error.message))
   }, [])
 
   const handleCompanyChange = (option: any) => {
@@ -131,22 +136,25 @@ export default function HomePage() {
       setSelectedModel("")
       setSelectedModelOption(null)
       setSelectedAlarmThreshold("")
-      setSelectedRange("0-100")
+      setSelectedRange("")
       return
     }
     const company = companies.find(c => c.fullname === option.value)
-    setSelectedAlarmThreshold(String(company.alarm))
+    const config = getProductConfig({ ...company, products: company.list }, company.list[0] || "")
+    setSelectedAlarmThreshold(company.list[0] ? String(config.alarm) : "")
     setSelectedCompany(company.fullname)
     setSelectedCompanyOption(option)
     setModels(company.list)
-    setSelectedRange(company.range || "0-100")
+    setSelectedRange(company.list[0] ? config.range : "")
     setSelectedModel(company.list[0] || "")
     setSelectedModelOption(company.list[0] ? { label: company.list[0], value: company.list[0] } : null)
   }
 
   const handleModelChange = (option: any) => {
     const company = companies.find(c => c.fullname === selectedCompany)
-    setSelectedAlarmThreshold(company ? String(company.alarm) : "")
+    const config = company && option ? getProductConfig({ ...company, products: company.list }, option.value) : null
+    setSelectedAlarmThreshold(config ? String(config.alarm) : "")
+    setSelectedRange(config?.range || "")
     if (!option) {
       setSelectedModel("")
       setSelectedModelOption(null)
@@ -181,8 +189,8 @@ export default function HomePage() {
       return
     }
 
-    if (!isSupportedAlarmThreshold(Number(selectedAlarmThreshold))) {
-      setErrorModal("请选择本次报警阈值：10、15、20 或 25 %LEL")
+    if (!selectedModel || !isSupportedAlarmThreshold(Number(selectedAlarmThreshold))) {
+      setErrorModal("请选择型号，并在公司信息中配置有效的报警阈值（10、15、20、25 %LEL）")
       setLoading(false)
       return
     }
@@ -650,25 +658,16 @@ export default function HomePage() {
                 />
               </div>
               <div className="min-w-0">
-                <label htmlFor="alarm_threshold" className="block text-sm font-medium text-gray-700 mb-2">本次报警阈值（%LEL）</label>
-                <select
+                <label htmlFor="alarm_threshold" className="block text-sm font-medium text-gray-700 mb-2">型号报警阈值（%LEL）</label>
+                <input
                   id="alarm_threshold"
                   name="alarm_threshold"
                   value={selectedAlarmThreshold}
-                  onChange={event => setSelectedAlarmThreshold(event.target.value)}
-                  disabled={!selectedCompany || !selectedModel}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white disabled:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">请选择阈值</option>
-                  {selectedAlarmThreshold && !isSupportedAlarmThreshold(Number(selectedAlarmThreshold)) && (
-                    <option value={selectedAlarmThreshold} disabled>厂家默认 {selectedAlarmThreshold}（暂不支持，请重新选择）</option>
-                  )}
-                  {SUPPORTED_ALARM_THRESHOLDS.map(threshold => (
-                    <option key={threshold} value={threshold}>{threshold} %LEL</option>
-                  ))}
-                </select>
-                <p className="mt-2 text-xs text-gray-500">仅用于本次全部探头，不修改厂家默认配置。切换厂家或型号后恢复默认阈值。</p>
+                  readOnly
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-700 bg-gray-50 cursor-not-allowed"
+                  placeholder="选择型号后自动加载"
+                />
+                <p className="mt-2 text-xs text-gray-500">使用该型号保存的参数。如需修改，请前往<Link href="/companies" className="text-blue-600 underline">公司信息</Link>。</p>
               </div>
               <div className="min-w-0">
                 <label htmlFor="liangcheng" className="block text-sm font-medium text-gray-700 mb-2">量程（%LEL）</label>
@@ -679,7 +678,7 @@ export default function HomePage() {
                   value={selectedRange}
                   readOnly
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-700 bg-gray-50 cursor-not-allowed"
-                  placeholder="选择公司后自动加载"
+                  placeholder="选择型号后自动加载"
                 />
               </div>
             </div>
@@ -962,7 +961,7 @@ function ConfirmModal({ data, onCancel, onConfirm }: { data: any, onCancel: () =
         alert_factory: "制造商名称",
         alert_type: "型号",
         liangcheng: "量程",
-        alarm_threshold: "本次报警阈值（%LEL）",
+        alarm_threshold: "型号报警阈值（%LEL）",
       },
       wideFields: ["alert_factory"],
     },

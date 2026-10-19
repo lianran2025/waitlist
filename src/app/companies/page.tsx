@@ -5,16 +5,18 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { CompanyCard } from '@/components/CompanyCard'
 import { ExclamationTriangleIcon, PlusIcon, HomeIcon } from '@heroicons/react/24/outline'
+import { getProductConfig } from '@/lib/product-config'
+import type { EditableCompany } from '@/components/CompanyFormDialog'
 import { CreateCompanyDialog } from '@/components/CreateCompanyDialog'
 
 export default function CompaniesPage() {
-  const [companies, setCompanies] = useState<any[]>([])
-  const [filteredCompanies, setFilteredCompanies] = useState<any[]>([])
+  const [companies, setCompanies] = useState<EditableCompany[]>([])
+  const [filteredCompanies, setFilteredCompanies] = useState<EditableCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const unconfirmedRangeCount = companies.filter(company => !company.rangeConfirmed).length
+  const unconfirmedRangeCount = companies.reduce((total, company) => total + company.products.filter(model => !getProductConfig(company, model).rangeConfirmed).length, 0)
 
   const fetchCompanies = async () => {
     try {
@@ -89,16 +91,19 @@ export default function CompaniesPage() {
             返回证书生成
           </Link>
         </div>
+        <div className="mb-5 flex justify-end">
+          <button type="button" onClick={() => setIsCreateDialogOpen(true)} className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"><PlusIcon className="mr-2 h-4 w-4" />添加新公司</button>
+        </div>
         {unconfirmedRangeCount > 0 && (
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
             <div className="flex gap-3">
               <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 flex-none" />
               <div>
                 <p className="font-medium">
-                  有 {unconfirmedRangeCount} 家公司的量程仍是默认值或尚未确认
+                  有 {unconfirmedRangeCount} 个型号的量程尚未确认
                 </p>
                 <p className="mt-1 text-sm">
-                  默认量程为 0-100 %LEL，仅用于临时占位。请逐一打开“编辑”，修改或确认真实量程后勾选确认项。
+                  请打开公司“编辑”，逐个型号核对真实量程并勾选确认项。
                 </p>
               </div>
             </div>
@@ -144,13 +149,9 @@ export default function CompaniesPage() {
                 添加新公司
               </button>
             </div>
-            <CreateCompanyDialog
-              isOpen={isCreateDialogOpen}
-              onClose={() => setIsCreateDialogOpen(false)}
-              onSuccess={fetchCompanies}
-            />
           </div>
         )}
+        <CreateCompanyDialog isOpen={isCreateDialogOpen} onClose={() => setIsCreateDialogOpen(false)} onSuccess={fetchCompanies} />
       </div>
     </div>
   )

@@ -42,3 +42,4 @@ next-env.d.ts
 .env*.local
 src/data/companies.json
 src/data/*.backup.json
+src/data/companies.json.*.tmp

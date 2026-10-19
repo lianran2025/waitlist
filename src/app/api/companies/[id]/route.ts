@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 // import { prisma } from '@/lib/prisma'
+import { CompanyValidationError } from '@/lib/product-config'
 import { companiesJson } from '@/lib/companies-json'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { shortName, fullName, products, alarm, range, rangeConfirmed } = body
+    const { shortName, fullName, products, alarm, range, rangeConfirmed, productConfigs } = body
 
     const company = companiesJson.update({
       where: {
@@ -21,6 +22,7 @@ export async function PUT(
         shortName,
         fullName,
         products,
+        productConfigs,
         alarm,
         range,
         rangeConfirmed
@@ -29,6 +31,7 @@ export async function PUT(
 
     return NextResponse.json(company)
   } catch (error) {
+    if (error instanceof CompanyValidationError) return NextResponse.json({ error: error.message }, { status: 400 })
     console.error('Error updating company:', error)
     return NextResponse.json(
       { error: '更新公司信息失败' },
@@ -50,6 +53,7 @@ export async function DELETE(
 
     return NextResponse.json(company)
   } catch (error) {
+    if (error instanceof CompanyValidationError) return NextResponse.json({ error: error.message }, { status: 400 })
     console.error('Error deleting company:', error)
     return NextResponse.json(
       { error: '删除公司失败' },
